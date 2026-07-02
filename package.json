@@ -4,12 +4,19 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rimraf dist && tsc",
+    "test": "jest",
+    "scripts": "tsc",
+    "styles": "sass src/styles:public/styles",
+    "build": "npm run scripts && npm run styles && copyfiles -u 1 \"public/**/*\" dist",
+    "build:clean": "rimraf dist && tsc",
     "start": "node .",
     "dev": "nodemon src/index.ts",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write",
+    "format:check": "prettier --check",
+    "postinstall": "npm run build:clean",
+    "precommit": "eslint && jest && build"
   },
   "repository": {
     "type": "git",
