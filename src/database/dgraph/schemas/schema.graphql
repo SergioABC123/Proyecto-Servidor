@@ -1,1 +1,64 @@
-// aca ira el esquema
+# Campos de Usuario
+nombre: string @index(term) .
+edad: int @index(int) .
+genero: string @index(exact) .
+rol: string @index(exact) .
+
+# Campos de Match
+fecha: datetime @index(hour) .
+
+# Campos de Juego
+nombre_juego: string @index(term) .
+
+# Campos de Idioma
+idioma: string @index(exact) .
+
+# Campos de Plataforma
+nombre_plataforma: string @index(exact) .
+
+# Campos de Comunidad
+nombre_comunidad: string @index(term) .
+creacion: datetime @index(hour) .
+
+# relaciones
+usuario_conecta: [uid] @reverse @count .
+usuario_juega: [uid] @reverse @count .
+habla: [uid] @reverse @count .
+juega_en: [uid] @reverse @count .
+usuario_miembro_de: [uid] @reverse @count .
+
+# TIPOS ----------------------------------
+
+type Usuario {
+  nombre
+  edad
+  genero
+  rol
+  usuario_conecta
+  usuario_juega
+  habla
+  juega_en
+  usuario_miembro_de
+}
+
+type Match {
+  fecha
+  usuario_conecta
+}
+
+type Juego {
+  nombre_juego
+}
+
+type Idioma {
+  idioma
+}
+
+type Plataforma {
+  nombre_plataforma
+}
+
+type Comunidad {
+  nombre_comunidad
+  creacion
+}
