@@ -31,6 +31,8 @@
   },
   "homepage": "https://github.com/SergioABC123/Proyecto-Servidor#readme",
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.4",
+    "dgraph-js": "^24.2.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-handlebars": "^9.0.1",
