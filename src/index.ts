@@ -1,6 +1,8 @@
+import "dotenv/config";
 import { createApp } from "./app";
 import { setSchema } from "./database/dgraph";
-import { mongodbConection } from "./database/mongo";
+import { mongodbConection } from "./config/mongo.config"; 
+
 
 const port = process.env.PORT || 3000;
 

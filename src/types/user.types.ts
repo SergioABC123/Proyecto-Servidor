@@ -1,9 +1,11 @@
 import {  Types } from 'mongoose';
 
+//Los enums sirven para evitar errores de tipeo y para tener un conjunto de valores predefinidos
+
 export enum Sexo{
     MASCULINO = "masculino",
     FEMENINO = "femenino",
-    OTRO = "OTRO"
+    OTRO = "otro"
 }
 
 export enum ModoDeJuego {
@@ -34,12 +36,6 @@ export enum Idioma {
     HINDI = "hindi"
 }
 
-export interface IJuegoActivo {
-    juego_id: Types.ObjectId; // referencia a otro documento
-    busca_equipo: boolean; 
-    desde: Date;
-}
-
 
 export enum Plataforma {
     PC = "pc",
@@ -49,25 +45,45 @@ export enum Plataforma {
     MOBILE = "mobile"
 }
 
+export enum Roles {
+    ADMIN = "administrador",
+    USER = 'usuario',
+    MOD = 'moderador',
+
+}
+
+
+//Las interfaces definen la estructura de los objetos
+//---------------
+//Definen la estructura delobkjeto anidado
+export interface IJuegoActivo { 
+    juego_id: Types.ObjectId; // referencia a otro documento
+    busca_equipo: boolean; 
+    desde: Date;
+}
+
 export interface IPlataforma{
     nombre: Plataforma;
     gamertag: string;
 }
+//---------------
+
 
 export interface IUser{
     nombre : string;
-    edad : number;
-    sexo : Sexo;
+    edad ?: number;
+    sexo ?: Sexo;
     correo : string;
-    contraseña_hash : string;
-    rol : string;
-    foto_perfil : string;
-    zona_horaria : string;
-    horario_juego : string;
-    disponibilidad: string[];
-    idiomas : Idioma[];
-    modo_juego: ModoDeJuego[];
-    plataformas: IPlataforma[];
-    juegos_activos: IJuegoActivo[]; //Array de objetos anidados 
-    juegos_pasados: Types.ObjectId[]; //Array de referencias a otros documetos 
+    contrasena_hash : string;
+    rol? : Roles;
+    isActive?:boolean;
+    foto_perfil? : string;
+    zona_horaria? : string;
+    horario_juego? : string;
+    disponibilidad?: string[];
+    idiomas? : Idioma[];
+    modo_juego? : ModoDeJuego[];
+    plataformas? : IPlataforma[];
+    juegos_activos? : IJuegoActivo[]; //Array de objetos anidados 
+    juegos_pasados? : Types.ObjectId[]; //Array de referencias a otros documetos 
 }

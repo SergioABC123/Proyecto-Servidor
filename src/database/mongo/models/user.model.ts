@@ -1,6 +1,6 @@
 // modelos
-import {Schema, model, connect} from 'mongoose'
-import { IUser,Sexo,ModoDeJuego,Idioma,Plataforma } from '../../../types/user.types' 
+import {Schema, model} from 'mongoose'
+import { IUser,Sexo,ModoDeJuego,Idioma,Plataforma,Roles } from '../../../types/user.types' 
 
 //En este archivo se define el modelo de usuario,
 // que es la estructura de los documentos que se guardaran en la coleccion de usuarios en MongoDB
@@ -9,11 +9,12 @@ import { IUser,Sexo,ModoDeJuego,Idioma,Plataforma } from '../../../types/user.ty
 //<Iuser> es un generico que le dice a mongoose que el modelo de usuario debe cumplir con la interfaz IUse
 const userSchema = new Schema<IUser>({
     nombre: { type: String, required: true},
-    edad: { type: Number, required:true},
-    sexo: { type: String, enum: Object.values(Sexo), required:true }, // enum: Object.values(Sexo) asegura que solo se puedan guardar los valores definidos en el enum Sexo
+    edad: { type: Number},
+    sexo: { type: String, enum: Object.values(Sexo) }, // enum: Object.values(Sexo) asegura que solo se puedan guardar los valores definidos en el enum Sexo
     correo: { type: String, required:true, unique: true},
-    contraseña_hash: {type: String, required:true},
-    rol: {type: String, required:true},
+    contrasena_hash: {type: String, required:true},
+    rol: {type: String, default:Roles.USER, enum:Object.values(Roles)},
+    isActive: {type:Boolean,  default:true},
     foto_perfil: {type: String},
     zona_horaria: {type: String},
     horario_juego: {type: String},
