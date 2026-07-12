@@ -4,6 +4,7 @@ import { HttpStatus } from "../types/https-status";
 import bcrypt from "bcrypt"
 import { generateToken } from "../utils/jwt";
 import { AuthRequest } from "../types/auth-request";
+import { IUser } from "../types/user.types";
 
 
 export async function registerUser(req: Request, res: Response) {
@@ -97,4 +98,43 @@ export function getMe(req: AuthRequest, res: Response) {
             rol: req.user.rol
         }
     });
+}
+
+
+export async function actualizarUsuario(req: AuthRequest, res: Response) {
+    try {
+        if (typeof req.user === 'string' || !req.user) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+        }
+        const { rol, password, ...resto } = req.body;
+        //Sacar el rol y password del objeto de actializacion para hacer validaciones
+        //Todo lo demas se agrupa dentro de resto como un objeto
+
+        if (rol !== undefined) { 
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: "No se puede modificar el rol" });
+        }
+
+        const userUpdate: Partial<IUser> = { ...resto };  
+        //Se utiliza spread para expandir la variable resto denro del objeto de UserUpdate
+
+        if (password !== undefined) {
+            userUpdate.contrasena_hash = await bcrypt.hash(password, 10);
+        }
+
+        const usuarioActualizado = await User.findByIdAndUpdate(req.user._id, userUpdate, { new: true }).select('-contrasena_hash');
+        //.select('-contrasena_hash') Es para decirle a moongose que traiga todo el documento
+        //sin contar ese campo y evitar filtrar la contrasena
+        
+        if (!usuarioActualizado) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'Usuario no encontrado' });
+        }
+
+        return res.json(usuarioActualizado);
+    } catch (err) {
+        console.log(err);
+        if ((err as Error).name === 'CastError') {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Id Invalido' });
+        }
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
+    }
 }
