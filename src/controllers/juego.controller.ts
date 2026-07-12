@@ -31,11 +31,33 @@ export async function crearJuego(req: Request, res: Response) {
                 "message":'No ingresaste un ID'
             });
         }else{
+
             const juegoExistente = await Juego.findOne({id_api: id});
+
             if(juegoExistente){
-                return res.status(HttpStatus.BAD_REQUEST).json({
-                    message: "Este juego ya existe"
-                });
+                if(juegoExistente.activo){
+                    return res.status(HttpStatus.BAD_REQUEST).json({
+                        message: "Este juego ya existe"
+                    });
+                }else{
+                    // Si el juego existe pero esta inactivo, lo reactivamos
+                    juegoExistente.activo = true;
+                    const doc = await juegoExistente.save();
+                    console.log("Juego reactivado: " + doc._id);
+
+                    return res.json({
+                        message: "Juego reactivado exitosamente",
+                        juego: {
+                            _id: doc._id,
+                            titulo: doc.titulo,
+                            imagen: doc.imagen,
+                            generos: doc.generos,
+                            plataformas: doc.plataformas,
+                            id_api: doc.id_api
+                        }
+                    });
+                    
+                }
             }
 
             const detalle = await obtenerDetalleJuegoRAWG(id);
@@ -167,13 +189,25 @@ export async function actualizarJuego(req: Request, res: Response) {
 export async function eliminarJuego(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        const juegoEliminado = await Juego.findByIdAndUpdate(id, { activo: false }, { new: true });
-        if (!juegoEliminado) {
+
+        const juego = await Juego.findById(id);
+
+        if (!juego) {
             return res.status(HttpStatus.NOT_FOUND).json({
                 message: 'No se encontro el juego'
             });
         }
-        return res.json(juegoEliminado);
+
+        if (!juego.activo) {
+            return res.status(HttpStatus.BAD_REQUEST).json({
+                message: 'El juego ya estaba inactivo'
+            });
+        }
+
+        juego.activo = false;
+        const juegoEliminado = await juego.save();
+
+        return res.json({ message: "Juego eliminado (marcado inactivo) correctamente", juego: juegoEliminado });
     } catch (err) {
         console.log(err);
         if((err as Error).name == 'CastError'){

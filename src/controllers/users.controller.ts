@@ -138,3 +138,55 @@ export async function actualizarUsuario(req: AuthRequest, res: Response) {
         return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
     }
 }
+
+
+export async function eliminarUsuario(req: AuthRequest, res: Response) {
+    try {
+        if (typeof req.user === 'string' || !req.user) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+        }
+
+        const usuarioEliminado = await User.findById(req.user._id);
+        
+        if (!usuarioEliminado) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'Usuario no encontrado' });
+        }
+
+        //agregar sufijo de eliminacion
+        usuarioEliminado.correo += `_eliminado_${Date.now()}`;
+        usuarioEliminado.isActive = false;
+        await usuarioEliminado.save();
+
+        return res.json({ message: 'Usuario eliminado exitosamente' });
+
+
+    } catch (err) {
+        console.log(err);
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
+    }
+}
+
+export async function listarUsuarios(req: Request, res: Response) {
+    try {
+        const pagina = Number(req.query.pagina) || 1;
+        const limite = Number(req.query.limite) || 10;
+        const skip = (pagina - 1) * limite;
+
+        const usuariosActivos =  req.query.incluirInactivos  === 'true' ? {} : { isActive: true };
+       
+        const usuarios = await User.find(usuariosActivos).select('-contrasena_hash').skip(skip).limit(limite);
+        const total = await User.countDocuments(usuariosActivos);
+
+        res.json({
+            data: usuarios,
+            pagina,
+            totalPaginas: Math.ceil(total / limite),
+            total
+        });
+    }catch(err){
+        console.log(err);
+        res.status(HttpStatus.SERVER_ERROR).json({
+            message: "Error del servidor"
+        })
+    }
+}
