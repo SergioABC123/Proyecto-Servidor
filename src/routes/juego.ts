@@ -1,8 +1,15 @@
 // rutas de los usuarios
-import { Router } from "express";
-import { previsualizarJuego, crearJuego, listarJuegos, obtenerJuego, actualizarJuego, eliminarJuego} from "../controllers/juego.controller";
-import { authMiddleware } from "../middlewares/auth.middleware";
-import { requireAdmin } from "../middlewares/allowRoles";
+import { Router } from 'express';
+import {
+    previsualizarJuego,
+    crearJuego,
+    listarJuegos,
+    obtenerJuego,
+    actualizarJuego,
+    eliminarJuego,
+} from '../controllers/juego.controller';
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { requireAdmin } from '../middlewares/allowRoles';
 
 const router = Router();
 

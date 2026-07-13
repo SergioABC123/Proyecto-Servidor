@@ -13,8 +13,8 @@
     "dev": "nodemon src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write",
-    "format:check": "prettier --check",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
     "postinstall": "npm run build:clean",
     "precommit": "eslint && jest && build"
   },

@@ -1,7 +1,4 @@
-import { Plataforma } from "./user.types";
-
-
-
+import { Plataforma } from './user.types';
 
 export interface IJuego {
     titulo: string;

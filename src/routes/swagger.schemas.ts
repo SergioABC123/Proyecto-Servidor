@@ -100,4 +100,87 @@
  *         activo:
  *           type: boolean
  *           default: true
+ *     Grupo:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         nombre:
+ *           type: string
+ *         descripcion:
+ *           type: string
+ *         fecha_creacion:
+ *           type: string
+ *           format: date-time
+ *         lider_id:
+ *           type: string
+ *         integrantes:
+ *           type: array
+ *           items:
+ *             type: string
+ *         activo:
+ *           type: boolean
+ *           default: true
+ *     Post:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         usuario_id:
+ *           type: string
+ *         grupo_id:
+ *           type: string
+ *         contenido:
+ *           type: string
+ *         imagenes:
+ *           type: array
+ *           items:
+ *             type: string
+ *         fecha:
+ *           type: string
+ *           format: date-time
+ *         activo:
+ *           type: boolean
+ *           default: true
+ *     Comentario:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         post_id:
+ *           type: string
+ *         usuario_id:
+ *           type: string
+ *         contenido:
+ *           type: string
+ *         fecha:
+ *           type: string
+ *           format: date-time
+ *     Reporte:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         remitente_id:
+ *           type: string
+ *         reportado_id:
+ *           type: string
+ *         motivo:
+ *           type: string
+ *           enum: [spam, acoso, contenido_inapropiado, otro]
+ *         descripcion:
+ *           type: string
+ *         estado:
+ *           type: string
+ *           enum: [pendiente, resuelto, rechazado]
+ *           default: pendiente
+ *         fecha:
+ *           type: string
+ *           format: date-time
+ *         grupo_id:
+ *           type: string
+ *         post_id:
+ *           type: string
+ *         comentario_id:
+ *           type: string
  */

@@ -1,9 +1,16 @@
 // rutas de los usuarios
-import { Router } from "express";
-import { actualizarUsuario, eliminarUsuario, getMe, loginUser, registerUser, listarUsuarios } from "../controllers/users.controller";
-import { authMiddleware } from "../middlewares/auth.middleware";
-import { validatePassword } from "../middlewares/validatePassword.middleware";
-import { requireAdmin } from "../middlewares/allowRoles";
+import { Router } from 'express';
+import {
+    actualizarUsuario,
+    eliminarUsuario,
+    getMe,
+    loginUser,
+    registerUser,
+    listarUsuarios,
+} from '../controllers/users.controller';
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { validatePassword } from '../middlewares/validatePassword.middleware';
+import { requireAdmin } from '../middlewares/allowRoles';
 
 const router = Router();
 
@@ -25,7 +32,7 @@ const router = Router();
  *       400:
  *         description: Faltan campos requeridos, contraseña muy corta, o correo ya en uso.
  */
-router.post('/register',validatePassword,registerUser);
+router.post('/register', validatePassword, registerUser);
 
 /**
  * @swagger
@@ -45,8 +52,7 @@ router.post('/register',validatePassword,registerUser);
  *       401:
  *         description: Credenciales inválidas.
  */
-router .post('/login',loginUser);
-
+router.post('/login', loginUser);
 
 /**
  * @swagger
@@ -70,8 +76,7 @@ router .post('/login',loginUser);
  *       401:
  *         description: No autenticado.
  */
-router.patch('/actualizar',authMiddleware,actualizarUsuario);
-
+router.patch('/actualizar', authMiddleware, actualizarUsuario);
 
 /**
  * @swagger
@@ -87,7 +92,7 @@ router.patch('/actualizar',authMiddleware,actualizarUsuario);
  *       401:
  *         description: No autenticado.
  */
-router.get('/me',authMiddleware, getMe );
+router.get('/me', authMiddleware, getMe);
 
 /**
  * @swagger
@@ -119,8 +124,7 @@ router.get('/me',authMiddleware, getMe );
  *       403:
  *         description: No tienes permisos de administrador.
  */
-router.get('/listarUsuarios',authMiddleware, requireAdmin, listarUsuarios );
-
+router.get('/listarUsuarios', authMiddleware, requireAdmin, listarUsuarios);
 
 /**
  * @swagger
