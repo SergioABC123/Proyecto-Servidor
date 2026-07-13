@@ -1,25 +1,26 @@
-import { json, Router, Request, Response } from 'express';
+import { Router } from 'express';
+import pagesRouter from './pages';
+import userRoutes from './users';
+import juegosRoutes from './juego';
+import grupoRoutes from './grupo';
+import postRoutes from './post';
+import comentarioRoutes from './comentario';
+import reporteRoutes from './reporte';
 
-const router= Router(); // usamos el servicio de rutas de express
+const router = Router(); // usamos el servicio de rutas de express
 
-router.get('', (req: Request, res: Response) => {
-    res.json({ message: 'raiz' });
-});
+router.use(pagesRouter);
 
-router.get('/admin', (req: Request, res: Response) => { // Poder absoluto
-    res.json({ message: 'Hola admin' });
-});
+router.use('/user', userRoutes);
 
-router.get('/moderator', (req: Request, res: Response) => { // no puede cambiar cosas en el servidor
-    res.json({ message: 'hola moderador' });
-});
+router.use('/juegos', juegosRoutes);
 
-router.get('/groupLeader', (req: Request, res: Response) => { // usuario con permisos en comunidades especificas
-    res.json({ message: 'hola lider de grupo' });
-});
+router.use('/grupo', grupoRoutes);
 
-router.get('/user', (req: Request, res: Response) => { // usuario normal
-    res.json({ message: 'hola usuario' });
-});
+router.use('/post', postRoutes);
+
+router.use('/comentario', comentarioRoutes);
+
+router.use('/reporte', reporteRoutes);
 
 export default router;

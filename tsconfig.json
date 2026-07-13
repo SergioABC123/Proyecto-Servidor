@@ -1,15 +1,16 @@
 {
-  "compilerOptions": {
-    "target": "es2025",
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "strict": true,
-    "noImplicitAny": true,
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "esModuleInterop": true,
-    "types": ["jest"]
-  },
-  "include": ["./src/**/*.ts", "src/database/dgraph/schemas/schema.graphql"],
-  "exclude": ["node_modules", "./src/**/*.spec.ts"]
+    "compilerOptions": {
+        "target": "es2025",
+        "rootDir": "./src",
+        "outDir": "./dist",
+        "strict": true,
+        "noImplicitAny": true,
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "types": ["jest", "node"]
+    },
+    "include": ["./src/**/*.ts"],
+    "exclude": ["node_modules"]
 }
