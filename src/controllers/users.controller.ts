@@ -5,48 +5,59 @@ import bcrypt from 'bcrypt';
 import { generateToken } from '../utils/jwt';
 import { AuthRequest } from '../types/auth-request';
 import { IUser } from '../types/user.types';
+import { crearUsuarioEnDgraph, actualizarUsuarioEnDgraph } from "../database/dgraph/queries/user.queries"; // para ponerlo en dgraph
+import { sincronizarIdiomasUsuario } from "../database/dgraph/queries/idioma.queries"; // para ponerlo en dgraph
+import { sincronizarPlataformasUsuario } from "../database/dgraph/queries/plataforma.queries"; // para ponerlo en dgraph
 
 export async function registerUser(req: Request, res: Response) {
-    try {
-        const { name, email, password } = req.body;
+    try{
+        const {name,email,password} = req.body;
 
-        if (name == undefined || email == undefined || password == undefined) {
+        if( name== undefined || email== undefined || password == undefined ){
             return res.status(HttpStatus.BAD_REQUEST).json({
-                message: 'Campos requeridos faltantes',
+                "message":'Campos requeridos faltantes'
             });
-        } else {
-            const usuarioExistente = await User.findOne({ correo: email });
-            if (usuarioExistente) {
+        }else{
+            const usuarioExistente = await User.findOne({correo: email});
+            if (usuarioExistente){
                 return res.status(HttpStatus.BAD_REQUEST).json({
-                    message: 'Este correo ya esta siendo utilizado',
+                    message: "Este correo ya esta siendo utilizado"
                 });
             }
-            const passwordHash = await bcrypt.hash(password, 10);
+            const passwordHash = await bcrypt.hash(password,10);
 
             const newUser = new User({
                 nombre: name,
                 correo: email,
-                contrasena_hash: passwordHash,
-            });
+                contrasena_hash: passwordHash
+            })
 
             const doc = await newUser.save();
-            console.log('Usuario creado: ' + doc._id);
+            console.log("Usuario creado: " + doc._id);
+
+            // Sincronizar con Dgraph (no bloquea el registro si falla) --------------------------------------------------
+            try {
+                await crearUsuarioEnDgraph(doc._id.toString(), doc.nombre);
+            } catch (err) {
+                console.error(`Usuario ${doc._id} creado en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
+            }
+            // -----------------------------------------------------------------------------------------------------------
 
             res.status(HttpStatus.CREATED).json({
-                message: 'Usuario creado exitosamente',
+                message: "Usuario creado exitosamente",
                 user: {
                     _id: doc._id,
                     nombre: doc.nombre,
                     correo: doc.correo,
-                    rol: doc.rol,
-                },
-            });
+                    rol: doc.rol
+                }
+            })
         }
-    } catch (err) {
+    }catch (err){
         console.log(err);
         res.status(HttpStatus.SERVER_ERROR).json({
-            message: 'Error del servidor',
-        });
+            message: "Error del servidor"
+        })
     }
 }
 
@@ -124,6 +135,48 @@ export async function actualizarUsuario(req: AuthRequest, res: Response) {
         if (!usuarioActualizado) {
             return res.status(HttpStatus.NOT_FOUND).json({ message: 'Usuario no encontrado' });
         }
+
+        const mongoId = req.user._id.toString(); // para funciones de abajo
+
+        // Actualizar usuario en dgraph ---------------------------------------------------------------------------------------------
+        try {
+            const camposDgraph: any = {}; // creamos un objeto vacio
+            if (userUpdate.nombre !== undefined) camposDgraph.nombre = userUpdate.nombre; // pasamos los datos que nos interesan
+            if (userUpdate.edad !== undefined) camposDgraph.edad = userUpdate.edad; // pasamos los datos que nos interesan
+            if (userUpdate.sexo !== undefined) camposDgraph.genero = userUpdate.sexo; // pasamos los datos que nos interesan
+            if (userUpdate.rol !== undefined) camposDgraph.rol = userUpdate.rol; // pasamos los datos que nos interesan
+ 
+            if (Object.keys(camposDgraph).length > 0) { // verificamos si hay algo que actiualizar
+                await actualizarUsuarioEnDgraph(req.user._id.toString(), camposDgraph); // si los hay los mandamos a la funcion
+            }
+        } catch (err) {
+            console.error(`Usuario ${req.user._id} actualizado en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
+        }
+        // --------------------------------------------------------------------------------------------------------------------------
+
+
+        // Sincronizar idiomas en dgraph ---------------------------------------------------------------------------------------------
+        if (userUpdate.idiomas !== undefined) {
+            try {
+                await sincronizarIdiomasUsuario(mongoId, userUpdate.idiomas);
+            } catch (err) {
+                console.error(`Usuario ${mongoId} actualizado en Mongo pero FALLÓ la sincronización de idiomas con Dgraph:`, err);
+            }
+        }
+        // ---------------------------------------------------------------------------------------------------------------------------
+
+
+        // Sincronizar plataformas en dgraph ----------------------------------------------------------------------------------------------
+        if (userUpdate.plataformas !== undefined) {
+            try {
+                const nombresPlataformas = userUpdate.plataformas.map(p => p.nombre);
+                await sincronizarPlataformasUsuario(mongoId, nombresPlataformas);
+            } catch (err) {
+                console.error(`Usuario ${mongoId} actualizado en Mongo pero FALLÓ la sincronización de plataformas con Dgraph:`, err);
+            }
+        }
+        // --------------------------------------------------------------------------------------------------------------------------------
+
 
         return res.json(usuarioActualizado);
     } catch (err) {

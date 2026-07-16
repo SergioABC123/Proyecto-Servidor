@@ -1,10 +1,13 @@
 import 'dotenv/config';
 import { createApp } from './app';
-import { setSchema } from './database/dgraph';
+import { setSchema } from './config/dgraph.config';
 import { mongodbConection } from './config/mongo.config';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import config from './config/swagger.config';
+import dns from "node:dns"; // lo puse para resolver errores de conexion en mi maqina ( sergio )
+
+dns.setServers(["8.8.8.8", "8.8.4.4"]); // lo puse para resolver errores de conexion en mi maqina ( sergio )
 
 const port = process.env.PORT || 3000;
 
