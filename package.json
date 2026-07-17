@@ -33,6 +33,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.14.4",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "dgraph-js": "^24.2.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -45,6 +46,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/google-protobuf": "^3.15.12",
     "@types/jest": "^30.0.0",

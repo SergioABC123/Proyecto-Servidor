@@ -1,0 +1,21 @@
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="card-title mb-4">Mi perfil</h3>
+
+                <p><strong>Nombre:</strong> {{usuario.nombre}}</p>
+                <p><strong>Correo:</strong> {{usuario.correo}}</p>
+                <p><strong>Rol:</strong> {{usuario.rol}}</p>
+
+                {{#if usuario.edad}}
+                    <p><strong>Edad:</strong> {{usuario.edad}}</p>
+                {{/if}}
+
+                {{#if usuario.zona_horaria}}
+                    <p><strong>Zona horaria:</strong> {{usuario.zona_horaria}}</p>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,25 @@
+<h2 class="mb-4">Catálogo de juegos</h2>
+
+{{#if error}}
+    <div class="alert alert-danger">{{error}}</div>
+{{/if}}
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {{#each juegos}}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                {{#if this.imagen}}
+                    <img src="{{this.imagen}}" class="card-img-top" alt="{{this.titulo}}">
+                {{/if}}
+                <div class="card-body">
+                    <h5 class="card-title">{{this.titulo}}</h5>
+                    <p class="card-text">
+                        <small class="text-muted">{{this.generos}}</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    {{else}}
+        <p class="text-muted">No hay juegos en el catálogo todavía.</p>
+    {{/each}}
+</div>
