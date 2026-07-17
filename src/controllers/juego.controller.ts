@@ -3,6 +3,7 @@ import { buscarJuegoEnRAWG, obtenerDetalleJuegoRAWG, transformarJuegoRAWG } from
 import { HttpStatus } from '../types/https-status';
 import { Juego } from '../database/mongo/models/juego.model';
 import { IJuego } from '../types/juego.types';
+import { crearJuegoEnDgraph, actualizarJuegoEnDgraph } from '../database/dgraph/queries/juego.queries';
 
 export async function previsualizarJuego(req: Request, res: Response) {
     try {
@@ -69,6 +70,15 @@ export async function crearJuego(req: Request, res: Response) {
 
             const doc = await newJuego.save();
             console.log('Juego creado: ' + doc._id);
+
+            // Sincronizar con Dgraph (no bloquea el registro si falla) --------------------------------------------------
+            try {
+                await crearJuegoEnDgraph(doc._id.toString(), doc.titulo);
+            } catch (err) {
+                console.error(`Juego ${doc._id} creado en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
+            }
+            // -----------------------------------------------------------------------------------------------------------
+
 
             res.status(HttpStatus.CREATED).json({
                 message: 'Juego creado exitosamente',
@@ -159,6 +169,17 @@ export async function actualizarJuego(req: Request, res: Response) {
                 message: 'No se encontro el juego',
             });
         }
+
+        // Actualizar juego en dgraph ---------------------------------------------------------------------------------------------
+        if (juegoUpdate.titulo !== undefined) {
+            try {
+                await actualizarJuegoEnDgraph(id as string, { nombre_juego: juegoUpdate.titulo });
+            } catch (err) {
+                console.error(`Juego ${id} actualizado en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
+            }
+        }
+        // ------------------------------------------------------------------------------------------------------------------------
+
         return res.json(juegoActualizado);
     } catch (err) {
         console.log(err);
