@@ -147,7 +147,7 @@ export async function actualizarUsuario(req: AuthRequest, res: Response) {
             if (userUpdate.rol !== undefined) camposDgraph.rol = userUpdate.rol; // pasamos los datos que nos interesan
  
             if (Object.keys(camposDgraph).length > 0) { // verificamos si hay algo que actiualizar
-                await actualizarUsuarioEnDgraph(req.user._id.toString(), camposDgraph); // si los hay los mandamos a la funcion
+                await actualizarUsuarioEnDgraph(mongoId, camposDgraph); // si los hay los mandamos a la funcion
             }
         } catch (err) {
             console.error(`Usuario ${req.user._id} actualizado en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
