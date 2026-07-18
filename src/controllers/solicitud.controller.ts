@@ -141,3 +141,20 @@ export async function responderSolicitud(req: AuthRequest, res: Response) {
         return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
     }
 }
+
+export async function listarSolicitudesEnviadas(req: AuthRequest, res: Response) {
+    try {
+        if (typeof req.user === 'string' || !req.user) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+        }
+
+        const solicitudes = await Solicitud.find({
+            de_usuario: req.user._id
+        }).populate('a_usuario', 'nombre foto_perfil');
+
+        return res.json({ data: solicitudes });
+    } catch (err) {
+        console.log(err);
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
+    }
+}

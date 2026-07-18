@@ -28,7 +28,7 @@ export async function obtenerRecomendacionesDgraph(
           misMatches as usuario_conecta
         }
 
-        companeros as var(func: uid(misMatches)) {
+        var(func: uid(misMatches)) {
           conectados as ~usuario_conecta
         }
 

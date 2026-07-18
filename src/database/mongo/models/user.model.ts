@@ -11,6 +11,7 @@ const userSchema = new Schema<IUser>({
     edad: { type: Number },
     sexo: { type: String, enum: Object.values(Sexo) }, // enum: Object.values(Sexo) asegura que solo se puedan guardar los valores definidos en el enum Sexo
     correo: { type: String, required: true, unique: true },
+    correo_confirmado: {type:Boolean, default: false},
     contrasena_hash: { type: String, required: true },
     rol: { type: String, default: Roles.USER, enum: Object.values(Roles) },
     isActive: { type: Boolean, default: true },
