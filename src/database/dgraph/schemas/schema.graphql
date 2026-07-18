@@ -62,6 +62,7 @@ type Plataforma {
 }
 
 type Comunidad {
+  mongo_id
   nombre_comunidad
   creacion
 }
