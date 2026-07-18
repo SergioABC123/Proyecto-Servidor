@@ -3,7 +3,8 @@ import { Types } from 'mongoose';
 export enum EstadoSolicitud {
     PENDIENTE = "pendiente",
     ACEPTADA = "aceptada",
-    RECHAZADA = "rechazada"
+    RECHAZADA = "rechazada",
+    CANCELADA = "cancelada"
 }
 
 export interface ISolicitud {

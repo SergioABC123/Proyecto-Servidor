@@ -117,9 +117,118 @@ router.get('/', listarGrupos);
 router.get('/:id', obtenerGrupo);
 router.patch('/:id', authMiddleware, actualizarGrupo);
 router.delete('/:id', authMiddleware, eliminarGrupo);
+/**
+ * @swagger
+ * /grupo/{id}/unirse:
+ *   post:
+ *     tags: [Grupos]
+ *     summary: Unirse a un grupo
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Te uniste al grupo exitosamente.
+ *       400:
+ *         description: Ya eres miembro de este grupo.
+ *       404:
+ *         description: Grupo no encontrado.
+ */
 router.post('/:id/unirse', authMiddleware, unirseAGrupo);
+
+/**
+ * @swagger
+ * /grupo/{id}/salir:
+ *   post:
+ *     tags: [Grupos]
+ *     summary: Salir de un grupo
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Saliste del grupo exitosamente.
+ *       400:
+ *         description: No eres miembro, o eres el líder y debes transferir el liderazgo primero.
+ *       404:
+ *         description: Grupo no encontrado.
+ */
 router.post('/:id/salir', authMiddleware, salirDeGrupo);
+
+/**
+ * @swagger
+ * /grupo/{id}/integrantes:
+ *   delete:
+ *     tags: [Grupos]
+ *     summary: Expulsar a un integrante (solo el líder o un administrador)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [usuarioId]
+ *             properties:
+ *               usuarioId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Integrante expulsado exitosamente.
+ *       401:
+ *         description: Solo el líder o un administrador pueden expulsar integrantes.
+ *       400:
+ *         description: No se puede expulsar al líder del grupo.
+ *       404:
+ *         description: Grupo no encontrado, o el usuario no es miembro.
+ */
 router.delete('/:id/integrantes', authMiddleware, expulsarIntegrante);
+
+/**
+ * @swagger
+ * /grupo/{id}/transferir-liderazgo:
+ *   patch:
+ *     tags: [Grupos]
+ *     summary: Transferir el liderazgo del grupo a otro integrante
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nuevoLiderId]
+ *             properties:
+ *               nuevoLiderId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Liderazgo transferido exitosamente.
+ *       403:
+ *         description: Solo el líder actual puede transferir el liderazgo.
+ *       400:
+ *         description: El nuevo líder debe ser miembro del grupo.
+ */
 router.patch('/:id/transferir-liderazgo', authMiddleware, transferirLiderazgo);
 
 export default router;

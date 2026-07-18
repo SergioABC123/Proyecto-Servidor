@@ -158,3 +158,41 @@ export async function listarSolicitudesEnviadas(req: AuthRequest, res: Response)
         return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
     }
 }
+
+export async function cancelarSolicitud(req: AuthRequest, res: Response) {
+    try {
+        if (typeof req.user === 'string' || !req.user) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+        }
+
+        const { id } = req.params;
+        const usuarioId = req.user._id.toString();
+
+        const solicitud = await Solicitud.findById(id);
+
+        if (!solicitud) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'No se encontro la solicitud' });
+        }
+
+        if (solicitud.de_usuario.toString() !== usuarioId) {
+            return res.status(HttpStatus.FORBIDDEN).json({ message: 'No puedes cancelar una solicitud que no enviaste tú' });
+        }
+
+        if (solicitud.estado !== EstadoSolicitud.PENDIENTE) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Solo se pueden cancelar solicitudes pendientes' });
+        }
+
+        solicitud.estado = EstadoSolicitud.CANCELADA;
+        solicitud.fecha_respuesta = new Date();
+        await solicitud.save();
+
+        return res.json({ message: 'Solicitud cancelada exitosamente' });
+
+    } catch (err) {
+        console.log(err);
+        if ((err as Error).name === 'CastError') {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Id Invalido' });
+        }
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
+    }
+}

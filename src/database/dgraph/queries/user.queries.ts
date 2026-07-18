@@ -42,9 +42,16 @@ export async function crearUsuarioEnDgraph( // crearemos el usuario en dgraph
     }
 }
 
+export interface CamposUsuarioDgraph {
+  nombre?: string;
+  edad?: number;
+  genero?: string;
+  rol?: string;
+}
+
 export async function actualizarUsuarioEnDgraph(
     mongoId: string, // recibimos el id del usuario que modificaremos
-    cambios: { nombre?: string; edad?: number; genero?: string; rol?: string }, // recibimos lo que vamos a modificar o actualizar
+    cambios: CamposUsuarioDgraph // recibimos lo que vamos a modificar o actualizar
 ): Promise<void> {
     const txn = dgraphClient.newTxn(); // nueva transaccion
 
