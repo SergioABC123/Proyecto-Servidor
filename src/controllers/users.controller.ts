@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import { generateToken, verificarTokenConfirmacion } from '../utils/jwt';
 import { AuthRequest } from '../types/auth-request';
 import { IUser } from '../types/user.types';
-import { crearUsuarioEnDgraph, actualizarUsuarioEnDgraph } from '../database/dgraph/queries/user.queries'; // para ponerlo en dgraph
+import { crearUsuarioEnDgraph, actualizarUsuarioEnDgraph, CamposUsuarioDgraph } from '../database/dgraph/queries/user.queries'; // para ponerlo en dgraph
 import { sincronizarIdiomasUsuario } from '../database/dgraph/queries/idioma.queries'; // para ponerlo en dgraph
 import { sincronizarPlataformasUsuario } from '../database/dgraph/queries/plataforma.queries'; // para ponerlo en dgraph
 import { enviarCorreoConfirmacion } from '../services/email.service';
@@ -180,7 +180,7 @@ export async function actualizarUsuario(req: AuthRequest, res: Response) {
 
         // Actualizar usuario en dgraph ---------------------------------------------------------------------------------------------
         try {
-            const camposDgraph: any = {}; // creamos un objeto vacio
+            const camposDgraph: CamposUsuarioDgraph = {}; 
             if (userUpdate.nombre !== undefined) camposDgraph.nombre = userUpdate.nombre;
             if (userUpdate.edad !== undefined) camposDgraph.edad = userUpdate.edad;
             if (userUpdate.sexo !== undefined) camposDgraph.genero = userUpdate.sexo;

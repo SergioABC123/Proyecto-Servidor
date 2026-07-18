@@ -93,6 +93,10 @@ export interface MatchConCompanero {
   companero: { mongo_id: string; nombre: string };
 }
 
+interface MatchRawDgraph {
+  fecha: string;
+  companero?: Array<{ mongo_id: string; nombre: string }>;
+}
 
 // Devuelvemos todos los matches de un usuario, con los datos del compañero de cada match (no del propio usuario).
 export async function obtenerMatchesDeUsuario(mongoId: string): Promise<MatchConCompanero[]> {
@@ -120,15 +124,15 @@ export async function obtenerMatchesDeUsuario(mongoId: string): Promise<MatchCon
       return [];
     }
 
-    const matchesRaw = data.usuario[0].usuario_conecta || [];
+    const matchesRaw: MatchRawDgraph[] = data.usuario[0].usuario_conecta || [];
 
     const resultado: MatchConCompanero[] = matchesRaw
-      .filter((m: any) => m.companero && m.companero.length > 0)
-      .map((m: any) => ({
+      .filter((m: MatchRawDgraph) => m.companero && m.companero.length > 0)
+      .map((m: MatchRawDgraph) => ({
         fecha: m.fecha,
         companero: {
-          mongo_id: m.companero[0].mongo_id,
-          nombre: m.companero[0].nombre,
+          mongo_id: m.companero![0].mongo_id,
+          nombre: m.companero![0].nombre,
         },
       }));
 
