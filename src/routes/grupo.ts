@@ -4,7 +4,11 @@ import {
     eliminarGrupo,
     actualizarGrupo,
     obtenerGrupo,
-    listarGrupos,
+    listarGrupos, 
+    unirseAGrupo, 
+    salirDeGrupo, 
+    expulsarIntegrante,
+    transferirLiderazgo
 } from '../controllers/grupo.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 
@@ -113,5 +117,9 @@ router.get('/', listarGrupos);
 router.get('/:id', obtenerGrupo);
 router.patch('/:id', authMiddleware, actualizarGrupo);
 router.delete('/:id', authMiddleware, eliminarGrupo);
+router.post('/:id/unirse', authMiddleware, unirseAGrupo);
+router.post('/:id/salir', authMiddleware, salirDeGrupo);
+router.delete('/:id/integrantes', authMiddleware, expulsarIntegrante);
+router.patch('/:id/transferir-liderazgo', authMiddleware, transferirLiderazgo);
 
 export default router;
