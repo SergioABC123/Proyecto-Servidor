@@ -4,14 +4,12 @@
             <div class="card-body p-4">
                 <h3 class="card-title mb-4 text-center">Iniciar sesión</h3>
 
-                {{#if error}}
-                    <div class="alert alert-danger">{{error}}</div>
-                {{/if}}
                 {{#if mensaje}}
                     <div class="alert alert-info">{{mensaje}}</div>
                 {{/if}}
+                <div id="mensaje-login"></div>
 
-                <form action="/login" method="POST">
+                <form id="form-login">
                     <div class="mb-3">
                         <label for="email" class="form-label">Correo</label>
                         <input type="email" class="form-control" id="email" name="email" required>
@@ -30,3 +28,5 @@
         </div>
     </div>
 </div>
+
+<script src="/js/login.js"></script>

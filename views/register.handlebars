@@ -4,11 +4,9 @@
             <div class="card-body p-4">
                 <h3 class="card-title mb-4 text-center">Crear cuenta</h3>
 
-                {{#if error}}
-                    <div class="alert alert-danger">{{error}}</div>
-                {{/if}}
+                <div id="mensaje-register"></div>
 
-                <form action="/register" method="POST">
+                <form id="form-register">
                     <div class="mb-3">
                         <label for="name" class="form-label">Nombre</label>
                         <input type="text" class="form-control" id="name" name="name" required>
@@ -32,3 +30,5 @@
         </div>
     </div>
 </div>
+
+<script src="/js/register.js"></script>

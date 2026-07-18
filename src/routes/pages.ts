@@ -2,9 +2,7 @@ import express from 'express';
 import {
     mostrarIndex,
     mostrarLogin,
-    procesarLogin,
     mostrarRegister,
-    procesarRegister,
     mostrarPerfil,
     mostrarJuegos,
     mostrarDetalleJuego,
@@ -18,9 +16,7 @@ const router = express.Router();
 
 router.get('/', authOpcionalVistas, mostrarIndex);
 router.get('/login', mostrarLogin);
-router.post('/login', procesarLogin);
 router.get('/register', mostrarRegister);
-router.post('/register', procesarRegister);
 router.get('/perfil', authMiddlewareVistas, mostrarPerfil);
 router.get('/juegos', mostrarJuegos);
 router.get('/juegos/:id', mostrarDetalleJuego);

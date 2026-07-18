@@ -1,117 +1,33 @@
 import { Request, Response } from 'express';
 import { User } from '../database/mongo/models/user.model';
-import bcrypt from 'bcrypt';
-import { generateToken } from '../utils/jwt';
 import { AuthRequest } from '../types/auth-request';
 import { Juego } from '../database/mongo/models/juego.model';
 import { Grupo } from '../database/mongo/models/grupo.model';
 import { Idioma, ModoDeJuego, Plataforma } from '../types/user.types';
-import { crearUsuarioEnDgraph } from '../database/dgraph/queries/user.queries';
-import { enviarCorreoConfirmacion } from '../services/email.service';
-import { generarTokenConfirmacion } from '../utils/jwt';
+
 
 export function mostrarIndex(req: Request, res: Response) {
     res.render('index'); // res.locals.estaLogueado ya está disponible en la vista sin pasarlo aquí
 }
 
 export function mostrarLogin(req: Request, res: Response) {
-    res.render('login'); // solo mostramos el formulario, sin datos extra
-}
-
-export function logout(req: Request, res: Response) {
-    res.clearCookie('token');
-    res.redirect('/');
-}
-
-export async function procesarLogin(req: Request, res: Response) {
-    try {
-        const { email, password } = req.body; // datos que mando el formulario (urlencoded)
-
-        const user = await User.findOne({ correo: email }); // buscamos si existe el correo
-        if (!user) {
-            // si no existe, volvemos a mostrar el login con un mensaje de error
-            return res.render('login', { error: 'Credenciales inválidas' });
-        }
-
-        const passwordCorrecta = await bcrypt.compare(password, user.contrasena_hash); // comparamos con el hash guardado
-        if (!passwordCorrecta) {
-            return res.render('login', { error: 'Credenciales inválidas' });
-        }
-
-        // generamos el token igual que en el login normal de la API
-        const token = generateToken({ _id: user._id, correo: user.correo, rol: user.rol });
-
-        // a diferencia de la API (que regresa el token en JSON), aqui lo guardamos en una cookie
-        res.cookie('token', token, {
-            httpOnly: true, // el JS del navegador no puede leer esta cookie, solo el navegador la manda sola
-            maxAge: 60 * 60 * 1000, // 1 hora, mismo tiempo que el expiresIn del JWT
-        });
-
-        return res.redirect('/perfil'); // ya logueado, lo mandamos a completar/ver su perfil
-    } catch (err) {
-        console.log(err);
-        return res.render('login', { error: 'Error del servidor' });
-    }
+    const mensaje = req.query.registrado === 'true'
+        ? 'Cuenta creada. Revisa tu correo para confirmarla antes de iniciar sesión.'
+        : undefined;
+    res.render('login', { mensaje });
 }
 
 export function mostrarRegister(req: Request, res: Response) {
     res.render('register'); // solo mostramos el formulario
 }
 
-export async function procesarRegister(req: Request, res: Response) {
-    try {
-        const { name, email, password } = req.body;
 
-        if (!name || !email || !password) {
-            return res.render('register', { error: 'Todos los campos son requeridos' });
-        }
-
-        if (password.length < 8) {
-            return res.render('register', { error: 'La contraseña debe tener al menos 8 caracteres' });
-        }
-
-        const usuarioExistente = await User.findOne({ correo: email });
-        if (usuarioExistente) {
-            return res.render('register', { error: 'Este correo ya está siendo utilizado' });
-        }
-
-        const passwordHash = await bcrypt.hash(password, 10);
-
-        const newUser = new User({
-            nombre: name,
-            correo: email,
-            contrasena_hash: passwordHash
-        });
-
-        const doc = await newUser.save();
-        console.log('Usuario creado: ' + doc._id);
-
-        // NUEVO: correo de confirmación (mismo patrón que registerUser)
-        const tokenConfirmacion = generarTokenConfirmacion(doc._id.toString());
-        const urlConfirmacion = `http://localhost:3000/confirmar-correo/${tokenConfirmacion}`;
-        try {
-            await enviarCorreoConfirmacion(doc.correo, doc.nombre, urlConfirmacion);
-        } catch (err) {
-            console.error(`Usuario ${doc._id} creado pero FALLÓ el envío de correo de confirmación:`, err);
-        }
-
-        // sincronizar con Dgraph 
-        try {
-            await crearUsuarioEnDgraph(doc._id.toString(), doc.nombre);
-        } catch (err) {
-            console.error(`Usuario ${doc._id} creado pero FALLÓ la sincronización con Dgraph:`, err);
-        }
-
-        // e confirmar el correo primero
-        return res.render('login', {
-            mensaje: 'Cuenta creada. Revisa tu correo para confirmarla antes de iniciar sesión.'
-        });
-
-    } catch (err) {
-        console.log(err);
-        return res.render('register', { error: 'Error del servidor' });
-    }
+export function logout(req: Request, res: Response) {
+    res.clearCookie('token');
+    res.redirect('/');
 }
+
+
 
 export async function mostrarPerfil(req: AuthRequest, res: Response) {
     try {
