@@ -56,7 +56,6 @@ router.post('/register', validatePassword, registerUser);
  *         description: Credenciales inválidas, o el correo aún no ha sido confirmado.
  */
 router.post('/login', loginUser);
-router.post('/login', loginUser);
 
 /**
  * @swagger

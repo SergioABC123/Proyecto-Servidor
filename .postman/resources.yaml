@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 36ced006-4c8e-4e31-8b69-1a7b16fb8e25
+
+localResources:
+  specs:
+    - ../src/database/dgraph/schemas/schema.graphql
