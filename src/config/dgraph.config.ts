@@ -24,7 +24,7 @@ const dgraphClient = new dgraph.DgraphClient(clientStub);
 
 async function setSchema(): Promise<void> {
     // funcion asincronica para usar el await, Promise<void> es porque la promesa no devuelve valor
-    const schemaPath = path.join(__dirname, "..", "database", "dgraph", "schemas", "schema.graphql"); // le decimos donde esta nuestro esquema
+    const schemaPath = path.join(__dirname, '..', 'database', 'dgraph', 'schemas', 'schema.graphql'); // le decimos donde esta nuestro esquema
     const schema = fs.readFileSync(schemaPath, 'utf8'); // leemos el contenido
 
     const op = new dgraph.Operation(); // creamos objeto de operacion

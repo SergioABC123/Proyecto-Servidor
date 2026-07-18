@@ -1,0 +1,32 @@
+{{#if error}}
+    <div class="alert alert-danger">{{error}}</div>
+    <a href="/juegos" class="btn btn-secondary">Volver al catalogo</a>
+{{else}}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                {{#if juego.imagen}}
+                    <img src="{{juego.imagen}}" class="card-img-top" alt="{{juego.titulo}}">
+                {{/if}}
+                <div class="card-body">
+                    <h2 class="card-title">{{juego.titulo}}</h2>
+
+                        <p class="mb-2">
+                            <strong>Géneros:</strong><br>
+                            {{#each juego.generos}}
+                                <span class="badge bg-{{colorGenero @index}} me-1">{{this}}</span>
+                            {{/each}}
+                        </p>
+                        <p>
+                            <strong>Plataformas:</strong><br>
+                            {{#each juego.plataformas}}
+                                <span class="badge bg-{{colorPlataforma this}} me-1">{{this}}</span>
+                            {{/each}}
+                        </p>
+
+                    <a href="/juegos" class="btn btn-outline-secondary mt-3">← Volver al catalogo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{{/if}}

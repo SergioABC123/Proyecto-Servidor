@@ -22,6 +22,9 @@
  *         correo:
  *           type: string
  *           format: email
+ *        correo_confirmado:
+ *          type: boolean
+ *          default: false
  *         rol:
  *           type: string
  *           enum: [administrador, usuario, moderador]

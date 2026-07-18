@@ -7,17 +7,26 @@
 <div class="row row-cols-1 row-cols-md-3 g-4">
     {{#each juegos}}
         <div class="col">
-            <div class="card h-100 shadow-sm">
-                {{#if this.imagen}}
-                    <img src="{{this.imagen}}" class="card-img-top" alt="{{this.titulo}}">
-                {{/if}}
-                <div class="card-body">
-                    <h5 class="card-title">{{this.titulo}}</h5>
-                    <p class="card-text">
-                        <small class="text-muted">{{this.generos}}</small>
-                    </p>
+            <a href="/juegos/{{this._id}}" class="text-decoration-none text-dark">
+                <div class="card h-100 shadow-sm">
+                    {{#if this.imagen}}
+                        <img src="{{this.imagen}}" class="card-img-top" alt="{{this.titulo}}">
+                    {{/if}}
+                    <div class="card-body">
+                        <h5 class="card-title">{{this.titulo}}</h5>
+                        <p class="card-text mb-2">
+                            {{#each this.generos}}
+                                <span class="badge bg-{{colorGenero @index}} me-1">{{this}}</span>
+                            {{/each}}
+                        </p>
+                        <p class="card-text">
+                            {{#each this.plataformas}}
+                                <span class="badge bg-{{colorPlataforma this}} me-1">{{this}}</span>
+                            {{/each}}
+                        </p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
     {{else}}
         <p class="text-muted">No hay juegos en el catálogo todavía.</p>

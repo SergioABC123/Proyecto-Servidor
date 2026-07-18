@@ -79,7 +79,6 @@ export async function crearJuego(req: Request, res: Response) {
             }
             // -----------------------------------------------------------------------------------------------------------
 
-
             res.status(HttpStatus.CREATED).json({
                 message: 'Juego creado exitosamente',
                 juego: {

@@ -2,38 +2,50 @@ import { Request, Response } from 'express';
 import { User } from '../database/mongo/models/user.model';
 import { HttpStatus } from '../types/https-status';
 import bcrypt from 'bcrypt';
-import { generateToken } from '../utils/jwt';
+import { generateToken, verificarTokenConfirmacion } from '../utils/jwt';
 import { AuthRequest } from '../types/auth-request';
 import { IUser } from '../types/user.types';
-import { crearUsuarioEnDgraph, actualizarUsuarioEnDgraph } from "../database/dgraph/queries/user.queries"; // para ponerlo en dgraph
-import { sincronizarIdiomasUsuario } from "../database/dgraph/queries/idioma.queries"; // para ponerlo en dgraph
-import { sincronizarPlataformasUsuario } from "../database/dgraph/queries/plataforma.queries"; // para ponerlo en dgraph
+import { crearUsuarioEnDgraph, actualizarUsuarioEnDgraph } from '../database/dgraph/queries/user.queries'; // para ponerlo en dgraph
+import { sincronizarIdiomasUsuario } from '../database/dgraph/queries/idioma.queries'; // para ponerlo en dgraph
+import { sincronizarPlataformasUsuario } from '../database/dgraph/queries/plataforma.queries'; // para ponerlo en dgraph
+import { enviarCorreoConfirmacion } from '../services/email.service';
+import { generarTokenConfirmacion } from '../utils/jwt';
+
+
 
 export async function registerUser(req: Request, res: Response) {
-    try{
-        const {name,email,password} = req.body;
+    try {
+        const { name, email, password } = req.body;
 
-        if( name== undefined || email== undefined || password == undefined ){
+        if (name == undefined || email == undefined || password == undefined) {
             return res.status(HttpStatus.BAD_REQUEST).json({
-                "message":'Campos requeridos faltantes'
+                message: 'Campos requeridos faltantes',
             });
-        }else{
-            const usuarioExistente = await User.findOne({correo: email});
-            if (usuarioExistente){
+        } else {
+            const usuarioExistente = await User.findOne({ correo: email });
+            if (usuarioExistente) {
                 return res.status(HttpStatus.BAD_REQUEST).json({
-                    message: "Este correo ya esta siendo utilizado"
+                    message: 'Este correo ya esta siendo utilizado',
                 });
             }
-            const passwordHash = await bcrypt.hash(password,10);
+            const passwordHash = await bcrypt.hash(password, 10);
 
             const newUser = new User({
                 nombre: name,
                 correo: email,
-                contrasena_hash: passwordHash
-            })
+                contrasena_hash: passwordHash,
+            });
 
             const doc = await newUser.save();
-            console.log("Usuario creado: " + doc._id);
+            console.log('Usuario creado: ' + doc._id);
+
+            const tokenConfirmacion = generarTokenConfirmacion(doc._id.toString());
+            const urlConfirmacion = `http://localhost:3000/confirmar-correo/${tokenConfirmacion}`;
+            try {
+                await enviarCorreoConfirmacion(doc.correo, doc.nombre, urlConfirmacion);
+            } catch (err) {
+                console.error(`Usuario ${doc._id} creado en Mongo pero FALLÓ el envío de correo de confirmación:`, err);
+            }
 
             // Sincronizar con Dgraph (no bloquea el registro si falla) --------------------------------------------------
             try {
@@ -44,20 +56,20 @@ export async function registerUser(req: Request, res: Response) {
             // -----------------------------------------------------------------------------------------------------------
 
             res.status(HttpStatus.CREATED).json({
-                message: "Usuario creado exitosamente",
+                message: 'Usuario creado exitosamente',
                 user: {
                     _id: doc._id,
                     nombre: doc.nombre,
                     correo: doc.correo,
-                    rol: doc.rol
-                }
-            })
+                    rol: doc.rol,
+                },
+            });
         }
-    }catch (err){
+    } catch (err) {
         console.log(err);
         res.status(HttpStatus.SERVER_ERROR).json({
-            message: "Error del servidor"
-        })
+            message: 'Error del servidor',
+        });
     }
 }
 
@@ -75,6 +87,10 @@ export async function loginUser(req: Request, res: Response) {
 
         if (!passwordCorrecta) {
             return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'Credenciales inválidas' });
+        }
+
+        if (!user.correo_confirmado) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'Debes confirmar tu correo antes de iniciar sesión' });
         }
 
         // Generar token
@@ -111,12 +127,15 @@ export async function actualizarUsuario(req: AuthRequest, res: Response) {
         if (typeof req.user === 'string' || !req.user) {
             return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
         }
-        const { rol, password, ...resto } = req.body;
+        const { rol, password,correo_confirmado, ...resto } = req.body;
         //Sacar el rol y password del objeto de actializacion para hacer validaciones
         //Todo lo demas se agrupa dentro de resto como un objeto
 
         if (rol !== undefined) {
             return res.status(HttpStatus.BAD_REQUEST).json({ message: 'No se puede modificar el rol' });
+        }
+        if (correo_confirmado !== undefined) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'No se puede modificar correo_confirmado desde aquí' });
         }
 
         const userUpdate: Partial<IUser> = { ...resto };
@@ -145,8 +164,9 @@ export async function actualizarUsuario(req: AuthRequest, res: Response) {
             if (userUpdate.edad !== undefined) camposDgraph.edad = userUpdate.edad; // pasamos los datos que nos interesan
             if (userUpdate.sexo !== undefined) camposDgraph.genero = userUpdate.sexo; // pasamos los datos que nos interesan
             if (userUpdate.rol !== undefined) camposDgraph.rol = userUpdate.rol; // pasamos los datos que nos interesan
- 
-            if (Object.keys(camposDgraph).length > 0) { // verificamos si hay algo que actiualizar
+
+            if (Object.keys(camposDgraph).length > 0) {
+                // verificamos si hay algo que actiualizar
                 await actualizarUsuarioEnDgraph(mongoId, camposDgraph); // si los hay los mandamos a la funcion
             }
         } catch (err) {
@@ -154,29 +174,32 @@ export async function actualizarUsuario(req: AuthRequest, res: Response) {
         }
         // --------------------------------------------------------------------------------------------------------------------------
 
-
         // Sincronizar idiomas en dgraph ---------------------------------------------------------------------------------------------
         if (userUpdate.idiomas !== undefined) {
             try {
                 await sincronizarIdiomasUsuario(mongoId, userUpdate.idiomas);
             } catch (err) {
-                console.error(`Usuario ${mongoId} actualizado en Mongo pero FALLÓ la sincronización de idiomas con Dgraph:`, err);
+                console.error(
+                    `Usuario ${mongoId} actualizado en Mongo pero FALLÓ la sincronización de idiomas con Dgraph:`,
+                    err,
+                );
             }
         }
         // ---------------------------------------------------------------------------------------------------------------------------
 
-
         // Sincronizar plataformas en dgraph ----------------------------------------------------------------------------------------------
         if (userUpdate.plataformas !== undefined) {
             try {
-                const nombresPlataformas = userUpdate.plataformas.map(p => p.nombre);
+                const nombresPlataformas = userUpdate.plataformas.map((p) => p.nombre);
                 await sincronizarPlataformasUsuario(mongoId, nombresPlataformas);
             } catch (err) {
-                console.error(`Usuario ${mongoId} actualizado en Mongo pero FALLÓ la sincronización de plataformas con Dgraph:`, err);
+                console.error(
+                    `Usuario ${mongoId} actualizado en Mongo pero FALLÓ la sincronización de plataformas con Dgraph:`,
+                    err,
+                );
             }
         }
         // --------------------------------------------------------------------------------------------------------------------------------
-
 
         return res.json(usuarioActualizado);
     } catch (err) {
@@ -234,5 +257,31 @@ export async function listarUsuarios(req: Request, res: Response) {
         res.status(HttpStatus.SERVER_ERROR).json({
             message: 'Error del servidor',
         });
+    }
+}
+
+
+
+export async function confirmarCuenta(req: Request, res: Response) {
+    try {
+        const { token } = req.params;
+        if (typeof token !== 'string') {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Token inválido' });
+        }
+        const { id } = verificarTokenConfirmacion(token);
+
+        const usuario = await User.findById(id);
+        if (!usuario) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'Usuario no encontrado' });
+        }
+
+        usuario.correo_confirmado = true;
+        await usuario.save();
+
+        return res.json({ message: 'Cuenta confirmada exitosamente' });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Token de confirmación inválido o expirado' });
     }
 }

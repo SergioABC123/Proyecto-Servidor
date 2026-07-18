@@ -70,6 +70,7 @@ export interface IUser {
     edad?: number;
     sexo?: Sexo;
     correo: string;
+    correo_confirmado?: boolean;
     contrasena_hash: string;
     rol?: Roles;
     isActive?: boolean;

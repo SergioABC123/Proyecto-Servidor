@@ -1,16 +1,22 @@
 import { Request, Response } from 'express';
-import {User} from '../database/mongo/models/user.model';
+import { User } from '../database/mongo/models/user.model';
 import bcrypt from 'bcrypt';
 import { generateToken } from '../utils/jwt';
 import { AuthRequest } from '../types/auth-request';
 import { Juego } from '../database/mongo/models/juego.model';
+import { Grupo } from '../database/mongo/models/grupo.model';
 
 export function mostrarIndex(req: Request, res: Response) {
-    res.render('index');
+    res.render('index'); // res.locals.estaLogueado ya está disponible en la vista sin pasarlo aquí
 }
 
 export function mostrarLogin(req: Request, res: Response) {
     res.render('login'); // solo mostramos el formulario, sin datos extra
+}
+
+export function logout(req: Request, res: Response) {
+    res.clearCookie('token');
+    res.redirect('/');
 }
 
 export async function procesarLogin(req: Request, res: Response) {
@@ -34,11 +40,10 @@ export async function procesarLogin(req: Request, res: Response) {
         // a diferencia de la API (que regresa el token en JSON), aqui lo guardamos en una cookie
         res.cookie('token', token, {
             httpOnly: true, // el JS del navegador no puede leer esta cookie, solo el navegador la manda sola
-            maxAge: 60 * 60 * 1000 // 1 hora, mismo tiempo que el expiresIn del JWT
+            maxAge: 60 * 60 * 1000, // 1 hora, mismo tiempo que el expiresIn del JWT
         });
 
         return res.redirect('/perfil'); // ya logueado, lo mandamos a completar/ver su perfil
-
     } catch (err) {
         console.log(err);
         return res.render('login', { error: 'Error del servidor' });
@@ -73,7 +78,7 @@ export async function procesarRegister(req: Request, res: Response) {
         const newUser = new User({
             nombre: name,
             correo: email,
-            contrasena_hash: passwordHash
+            contrasena_hash: passwordHash,
             // rol e isActive quedan con su default (usuario / true)
         });
 
@@ -84,17 +89,15 @@ export async function procesarRegister(req: Request, res: Response) {
 
         res.cookie('token', token, {
             httpOnly: true,
-            maxAge: 60 * 60 * 1000
+            maxAge: 60 * 60 * 1000,
         });
 
         return res.redirect('/perfil'); // directo a perfil, ya logueado
-
     } catch (err) {
         console.log(err);
         return res.render('register', { error: 'Error del servidor' });
     }
 }
-
 
 export async function mostrarPerfil(req: AuthRequest, res: Response) {
     try {
@@ -106,13 +109,11 @@ export async function mostrarPerfil(req: AuthRequest, res: Response) {
         //Convertimos el dcumento aun objeto plano antes de pasarlo a la vista
 
         res.render('perfil', { usuario });
-
     } catch (err) {
         console.log(err);
         return res.redirect('/login');
     }
 }
-
 
 export async function mostrarJuegos(req: Request, res: Response) {
     try {
@@ -121,5 +122,62 @@ export async function mostrarJuegos(req: Request, res: Response) {
     } catch (err) {
         console.log(err);
         res.render('juegos', { juegos: [], error: 'No se pudieron cargar los juegos' });
+    }
+}
+
+export async function mostrarDetalleJuego(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const juego = await Juego.findById(id).lean();
+
+        if (!juego || !juego.activo) {
+            return res.render('juego-detalle', { error: 'No se encontro el juego' });
+        }
+
+        res.render('juego-detalle', { juego });
+    } catch (err) {
+        console.log(err);
+        res.render('juego-detalle', { error: 'No se encontro el juego' });
+    }
+}
+
+interface FiltroGrupo {
+    activo: boolean;
+    integrantes?: string;
+}
+
+export async function mostrarGrupos(req: Request, res: Response) {
+    try {
+        const soloMios = req.query.misGrupos === 'true';
+        const usuario = res.locals.usuario;
+
+        const filtro: FiltroGrupo = { activo: true };
+
+        if (soloMios && usuario) {
+            filtro.integrantes = usuario._id.toString();
+        }
+
+        const grupos = await Grupo.find(filtro).lean();
+        res.render('grupos', { grupos, soloMios });
+    } catch (err) {
+        console.log(err);
+        res.render('grupos', { grupos: [], error: 'No se pudieron cargar los grupos' });
+    }
+}
+export async function mostrarDetalleGrupo(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const grupo = await Grupo.findById(id).lean();
+
+        if (!grupo || !grupo.activo) {
+            return res.render('grupo-detalle', { error: 'No se encontro el grupo' });
+        }
+
+        const token = req.cookies.token; // el servidor puede leer la cookie httpOnly
+
+        res.render('grupo-detalle', { grupo, token });
+    } catch (err) {
+        console.log(err);
+        res.render('grupo-detalle', { error: 'No se encontro el grupo' });
     }
 }

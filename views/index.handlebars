@@ -6,8 +6,12 @@
             horario, plataforma e idioma. Deja de jugar solo.
         </p>
         <div class="mt-4">
-            <a href="/login" class="btn btn-primary btn-lg me-2 px-4">Iniciar sesión</a>
-            <a href="/register" class="btn btn-outline-primary btn-lg px-4">Registrarse</a>
+            {{#if estaLogueado}}
+                <a href="/perfil" class="btn btn-primary btn-lg px-4">Ir a mi perfil</a>
+            {{else}}
+                <a href="/login" class="btn btn-primary btn-lg me-2 px-4">Iniciar sesión</a>
+                <a href="/register" class="btn btn-outline-primary btn-lg px-4">Registrarse</a>
+            {{/if}}
         </div>
     </div>
 </div>

@@ -30,6 +30,21 @@ export default defineConfig([
         ],
         'no-console': 'off'
       }
-    }
+    },
 
+    {
+    files: ['public/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,  // document, window, alert
+        io: 'readonly'       // variable global que trae socket.io.js por <script>
+      }
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off' // este bloque es JS puro
+    }
+  }
 ]);
+
+
+

@@ -1,0 +1,30 @@
+{{#if error}}
+    <div class="alert alert-danger">{{error}}</div>
+    <a href="/grupos" class="btn btn-secondary">Volver a grupos</a>
+{{else}}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="card-title">{{grupo.nombre}}</h2>
+                    <p class="text-muted">{{grupo.descripcion}}</p>
+                    <p><strong>Integrantes:</strong> {{grupo.integrantes.length}}</p>
+
+                    <hr>
+                    <h4>Chat del grupo</h4>
+                    <div id="mensajes" class="border rounded p-3 mb-3" style="height: 300px; overflow-y: auto;"></div>
+
+                    <form id="form-mensaje" class="d-flex gap-2">
+                        <input type="text" id="input-mensaje" class="form-control" placeholder="Escribe un mensaje...">
+                        <button type="submit" class="btn btn-primary">Enviar</button>
+                    </form>
+
+                    <a href="/grupos" class="btn btn-outline-secondary mt-3">← Volver a grupos</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/chat.js" data-grupo-id="{{grupo._id}}" data-token="{{token}}"></script>
+{{/if}}
