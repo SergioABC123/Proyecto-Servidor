@@ -7,6 +7,9 @@
                 {{#if error}}
                     <div class="alert alert-danger">{{error}}</div>
                 {{/if}}
+                {{#if mensaje}}
+                    <div class="alert alert-info">{{mensaje}}</div>
+                {{/if}}
 
                 <form action="/login" method="POST">
                     <div class="mb-3">

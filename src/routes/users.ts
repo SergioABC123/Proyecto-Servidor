@@ -12,6 +12,7 @@ import {
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { validatePassword } from '../middlewares/validatePassword.middleware';
 import { requireAdmin } from '../middlewares/allowRoles';
+import { upload } from '../middlewares/upload.middleware';
 
 const router = Router();
 
@@ -42,13 +43,19 @@ router.post('/register', validatePassword, registerUser);
  *   post:
  *     tags: [Users]
  *     summary: Iniciar sesión
- *     ...
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginInput'
  *     responses:
  *       200:
  *         description: Login exitoso, regresa un JWT.
  *       401:
  *         description: Credenciales inválidas, o el correo aún no ha sido confirmado.
  */
+router.post('/login', loginUser);
 router.post('/login', loginUser);
 
 /**
@@ -73,7 +80,7 @@ router.post('/login', loginUser);
  *       401:
  *         description: No autenticado.
  */
-router.patch('/actualizar', authMiddleware, actualizarUsuario);
+router.patch('/actualizar', authMiddleware, upload.single('foto_perfil'),actualizarUsuario);
 
 /**
  * @swagger

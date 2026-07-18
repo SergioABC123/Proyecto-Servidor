@@ -1,21 +1,108 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 text-center">
+                <div id="preview-foto">
+                    {{#if usuario.foto_perfil}}
+                        <img src="{{usuario.foto_perfil}}" alt="Foto de perfil" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
+                    {{else}}
+                        <i class="bi bi-person-circle" style="font-size: 120px; color: #ccc;"></i>
+                    {{/if}}
+                </div>
+                <h3 class="mt-3 mb-0">{{usuario.nombre}}</h3>
+                <p class="text-muted">{{usuario.correo}}</p>
+                <p><span class="badge bg-secondary">{{usuario.rol}}</span></p>
+            </div>
+        </div>
+
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h3 class="card-title mb-4">Mi perfil</h3>
+                <h4 class="card-title mb-4">Completar / editar perfil</h4>
 
-                <p><strong>Nombre:</strong> {{usuario.nombre}}</p>
-                <p><strong>Correo:</strong> {{usuario.correo}}</p>
-                <p><strong>Rol:</strong> {{usuario.rol}}</p>
+                <div id="mensaje-perfil"></div>
 
-                {{#if usuario.edad}}
-                    <p><strong>Edad:</strong> {{usuario.edad}}</p>
-                {{/if}}
+                <form id="form-perfil">
+                    <div class="mb-3">
+                        <label class="form-label">Foto de perfil</label>
+                        <input type="file" name="foto_perfil" id="input-foto" class="form-control" accept="image/*">
+                    </div>
 
-                {{#if usuario.zona_horaria}}
-                    <p><strong>Zona horaria:</strong> {{usuario.zona_horaria}}</p>
-                {{/if}}
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-control" value="{{usuario.nombre}}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Edad</label>
+                        <input type="number" name="edad" class="form-control" value="{{usuario.edad}}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Zona horaria</label><br>
+                        {{#each zonasHorarias}}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="zona_horaria" value="{{this}}" {{{marcadoSiIgual this ../usuario.zona_horaria}}}>
+                                <label class="form-check-label">{{this}}</label>
+                            </div>
+                        {{/each}}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Horario de juego</label><br>
+                        {{#each horariosJuego}}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="horario_juego" value="{{this}}" {{{marcadoSiEnArray this ../usuario.horario_juego}}}>
+                                <label class="form-check-label">{{this}}</label>
+                            </div>
+                        {{/each}}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Disponibilidad</label><br>
+                        {{#each diasSemana}}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="disponibilidad" value="{{this}}" {{{marcadoSiEnArray this ../usuario.disponibilidad}}}>
+                                <label class="form-check-label">{{this}}</label>
+                            </div>
+                        {{/each}}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Idiomas</label><br>
+                        {{#each idiomas}}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="idiomas" value="{{this}}" {{{marcadoSiEnArray this ../usuario.idiomas}}}>
+                                <label class="form-check-label">{{this}}</label>
+                            </div>
+                        {{/each}}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Modo de juego</label><br>
+                        {{#each modosJuego}}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="modo_juego" value="{{this}}" {{{marcadoSiEnArray this ../usuario.modo_juego}}}>
+                                <label class="form-check-label">{{this}}</label>
+                            </div>
+                        {{/each}}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Plataformas</label><br>
+                        {{#each plataformas}}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input plataforma-checkbox" type="checkbox" value="{{this}}">
+                                <label class="form-check-label">{{this}}</label>
+                            </div>
+                        {{/each}}
+                        <div id="contenedor-gamertags" class="mt-2"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Guardar cambios</button>
+                </form>
             </div>
         </div>
     </div>
 </div>
+
+<script src="/js/perfil.js" data-token="{{token}}"></script>

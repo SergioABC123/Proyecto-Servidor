@@ -10,6 +10,7 @@ import { sincronizarIdiomasUsuario } from '../database/dgraph/queries/idioma.que
 import { sincronizarPlataformasUsuario } from '../database/dgraph/queries/plataforma.queries'; // para ponerlo en dgraph
 import { enviarCorreoConfirmacion } from '../services/email.service';
 import { generarTokenConfirmacion } from '../utils/jwt';
+import { subirImagenACloudinary } from '../services/cloudinary.service';
 
 
 
@@ -49,6 +50,7 @@ export async function registerUser(req: Request, res: Response) {
 
             // Sincronizar con Dgraph (no bloquea el registro si falla) --------------------------------------------------
             try {
+                 console.log('INICIANDO SINCRONIZACION DGRAPH')
                 await crearUsuarioEnDgraph(doc._id.toString(), doc.nombre);
             } catch (err) {
                 console.error(`Usuario ${doc._id} creado en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
@@ -122,12 +124,15 @@ export function getMe(req: AuthRequest, res: Response) {
     });
 }
 
+
+
+
 export async function actualizarUsuario(req: AuthRequest, res: Response) {
     try {
         if (typeof req.user === 'string' || !req.user) {
             return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
         }
-        const { rol, password,correo_confirmado, ...resto } = req.body;
+        const { rol, password, correo_confirmado, plataformas, ...resto } = req.body;
         //Sacar el rol y password del objeto de actializacion para hacer validaciones
         //Todo lo demas se agrupa dentro de resto como un objeto
 
@@ -145,6 +150,22 @@ export async function actualizarUsuario(req: AuthRequest, res: Response) {
             userUpdate.contrasena_hash = await bcrypt.hash(password, 10);
         }
 
+        // NUEVO: plataformas llega como string JSON desde el formulario (multipart/form-data
+        // no soporta estructuras anidadas como {nombre, gamertag} directamente)
+        if (plataformas !== undefined) {
+            try {
+                userUpdate.plataformas = JSON.parse(plataformas);
+            } catch {
+                return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Formato de plataformas inválido' });
+            }
+        }
+
+        // NUEVO: si viene un archivo (gracias a upload.single('foto_perfil') en la ruta),
+        // lo subimos a Cloudinary y guardamos la URL resultante
+        if (req.file) {
+            userUpdate.foto_perfil = await subirImagenACloudinary(req.file.buffer);
+        }
+
         const usuarioActualizado = await User.findByIdAndUpdate(req.user._id, userUpdate, { new: true }).select(
             '-contrasena_hash',
         );
@@ -160,14 +181,13 @@ export async function actualizarUsuario(req: AuthRequest, res: Response) {
         // Actualizar usuario en dgraph ---------------------------------------------------------------------------------------------
         try {
             const camposDgraph: any = {}; // creamos un objeto vacio
-            if (userUpdate.nombre !== undefined) camposDgraph.nombre = userUpdate.nombre; // pasamos los datos que nos interesan
-            if (userUpdate.edad !== undefined) camposDgraph.edad = userUpdate.edad; // pasamos los datos que nos interesan
-            if (userUpdate.sexo !== undefined) camposDgraph.genero = userUpdate.sexo; // pasamos los datos que nos interesan
-            if (userUpdate.rol !== undefined) camposDgraph.rol = userUpdate.rol; // pasamos los datos que nos interesan
+            if (userUpdate.nombre !== undefined) camposDgraph.nombre = userUpdate.nombre;
+            if (userUpdate.edad !== undefined) camposDgraph.edad = userUpdate.edad;
+            if (userUpdate.sexo !== undefined) camposDgraph.genero = userUpdate.sexo;
+            if (userUpdate.rol !== undefined) camposDgraph.rol = userUpdate.rol;
 
             if (Object.keys(camposDgraph).length > 0) {
-                // verificamos si hay algo que actiualizar
-                await actualizarUsuarioEnDgraph(mongoId, camposDgraph); // si los hay los mandamos a la funcion
+                await actualizarUsuarioEnDgraph(mongoId, camposDgraph);
             }
         } catch (err) {
             console.error(`Usuario ${req.user._id} actualizado en Mongo pero FALLÓ la sincronización con Dgraph:`, err);

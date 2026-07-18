@@ -5,6 +5,10 @@ import { generateToken } from '../utils/jwt';
 import { AuthRequest } from '../types/auth-request';
 import { Juego } from '../database/mongo/models/juego.model';
 import { Grupo } from '../database/mongo/models/grupo.model';
+import { Idioma, ModoDeJuego, Plataforma } from '../types/user.types';
+import { crearUsuarioEnDgraph } from '../database/dgraph/queries/user.queries';
+import { enviarCorreoConfirmacion } from '../services/email.service';
+import { generarTokenConfirmacion } from '../utils/jwt';
 
 export function mostrarIndex(req: Request, res: Response) {
     res.render('index'); // res.locals.estaLogueado ya está disponible en la vista sin pasarlo aquí
@@ -56,43 +60,53 @@ export function mostrarRegister(req: Request, res: Response) {
 
 export async function procesarRegister(req: Request, res: Response) {
     try {
-        const { name, email, password } = req.body; // datos del formulario
+        const { name, email, password } = req.body;
 
         if (!name || !email || !password) {
             return res.render('register', { error: 'Todos los campos son requeridos' });
         }
 
         if (password.length < 8) {
-            // misma validacion que validatePassword.middleware.ts, pero aqui a mano
-            // porque este formulario no pasa por ese middleware
             return res.render('register', { error: 'La contraseña debe tener al menos 8 caracteres' });
         }
 
-        const usuarioExistente = await User.findOne({ correo: email }); // evitamos correos duplicados
+        const usuarioExistente = await User.findOne({ correo: email });
         if (usuarioExistente) {
             return res.render('register', { error: 'Este correo ya está siendo utilizado' });
         }
 
-        const passwordHash = await bcrypt.hash(password, 10); // hasheamos antes de guardar
+        const passwordHash = await bcrypt.hash(password, 10);
 
         const newUser = new User({
             nombre: name,
             correo: email,
-            contrasena_hash: passwordHash,
-            // rol e isActive quedan con su default (usuario / true)
+            contrasena_hash: passwordHash
         });
 
         const doc = await newUser.save();
+        console.log('Usuario creado: ' + doc._id);
 
-        // auto-login: generamos el token de una vez, sin pedirle que inicie sesion aparte
-        const token = generateToken({ _id: doc._id, correo: doc.correo, rol: doc.rol });
+        // NUEVO: correo de confirmación (mismo patrón que registerUser)
+        const tokenConfirmacion = generarTokenConfirmacion(doc._id.toString());
+        const urlConfirmacion = `http://localhost:3000/confirmar-correo/${tokenConfirmacion}`;
+        try {
+            await enviarCorreoConfirmacion(doc.correo, doc.nombre, urlConfirmacion);
+        } catch (err) {
+            console.error(`Usuario ${doc._id} creado pero FALLÓ el envío de correo de confirmación:`, err);
+        }
 
-        res.cookie('token', token, {
-            httpOnly: true,
-            maxAge: 60 * 60 * 1000,
+        // sincronizar con Dgraph 
+        try {
+            await crearUsuarioEnDgraph(doc._id.toString(), doc.nombre);
+        } catch (err) {
+            console.error(`Usuario ${doc._id} creado pero FALLÓ la sincronización con Dgraph:`, err);
+        }
+
+        // e confirmar el correo primero
+        return res.render('login', {
+            mensaje: 'Cuenta creada. Revisa tu correo para confirmarla antes de iniciar sesión.'
         });
 
-        return res.redirect('/perfil'); // directo a perfil, ya logueado
     } catch (err) {
         console.log(err);
         return res.render('register', { error: 'Error del servidor' });
@@ -102,13 +116,27 @@ export async function procesarRegister(req: Request, res: Response) {
 export async function mostrarPerfil(req: AuthRequest, res: Response) {
     try {
         if (typeof req.user === 'string' || !req.user) {
-            return res.redirect('/login'); // por si acaso, aunque el middleware ya lo cubrió
+            return res.redirect('/login');
         }
 
         const usuario = await User.findById(req.user._id).select('-contrasena_hash').lean();
-        //Convertimos el dcumento aun objeto plano antes de pasarlo a la vista
+        const token = req.cookies.token;
 
-        res.render('perfil', { usuario });
+        const zonasHorarias = ['GMT-8', 'GMT-7', 'GMT-6', 'GMT-5', 'GMT-4', 'GMT-3'];
+        const horariosJuego = ['mañana', 'tarde', 'noche'];
+        const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+        res.render('perfil', {
+            usuario,
+            token,
+            idiomas: Object.values(Idioma),
+            modosJuego: Object.values(ModoDeJuego),
+            plataformas: Object.values(Plataforma),
+            zonasHorarias,
+            horariosJuego,
+            diasSemana
+        });
+
     } catch (err) {
         console.log(err);
         return res.redirect('/login');

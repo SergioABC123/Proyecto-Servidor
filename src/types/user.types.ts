@@ -76,7 +76,7 @@ export interface IUser {
     isActive?: boolean;
     foto_perfil?: string;
     zona_horaria?: string;
-    horario_juego?: string;
+    horario_juego?: string[];
     disponibilidad?: string[];
     idiomas?: Idioma[];
     modo_juego?: ModoDeJuego[];

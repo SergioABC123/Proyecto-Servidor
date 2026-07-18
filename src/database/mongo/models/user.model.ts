@@ -16,7 +16,7 @@ const userSchema = new Schema<IUser>({
     isActive: { type: Boolean, default: true },
     foto_perfil: { type: String },
     zona_horaria: { type: String },
-    horario_juego: { type: String },
+    horario_juego: { type: [String] },
     disponibilidad: { type: [String] },
     idiomas: [{ type: String, enum: Object.values(Idioma) }],
     modo_juego: [{ type: String, enum: Object.values(ModoDeJuego) }],
