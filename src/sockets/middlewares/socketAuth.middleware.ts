@@ -5,6 +5,7 @@ import { User } from '../../database/mongo/models/user.model';
 export interface SocketAutenticado extends Socket {
     usuarioId?: string;
     nombreUsuario?: string;
+    rol?: string;
 }
 
 /**
@@ -34,7 +35,9 @@ export async function socketAuthMiddleware(socket: SocketAutenticado, next: (err
 
         socket.usuarioId = decoded._id;
         socket.nombreUsuario = usuario.nombre;
+        socket.rol = usuario.rol;
         next();
+
     } catch {
         next(new Error('Token inválido'));
     }

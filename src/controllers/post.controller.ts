@@ -3,6 +3,9 @@ import { AuthRequest } from '../types/auth-request';
 import { HttpStatus } from '../types/https-status';
 import { IPost } from '../types/post.types';
 import { Post } from '../database/mongo/models/post.model';
+import { Grupo } from '../database/mongo/models/grupo.model';
+import { subirImagenACloudinary } from '../services/cloudinary.service';
+
 
 interface FiltroPost {
     activo?: boolean;
@@ -12,56 +15,58 @@ interface FiltroPost {
 export async function crearPost(req: AuthRequest, res: Response) {
     try {
         if (typeof req.user === 'string' || !req.user) {
-            // verificamos que no sea string porque esperamos un objeto
             return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
         }
 
-        const { contenido, imagenes, grupo_id } = req.body; // obtenemos los datos desde el cliente
+        const { contenido, grupo_id } = req.body;
 
         if (!grupo_id) {
-            return res.status(HttpStatus.BAD_REQUEST).json({
-                message: 'El ID del grupo es requerido',
-            });
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'El ID del grupo es requerido' });
         }
 
         if (contenido === undefined) {
-            return res.status(HttpStatus.BAD_REQUEST).json({
-                message: 'El contenido del post es requerido',
-            });
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'El contenido del post es requerido' });
+        }
+
+        const imagenes: string[] = [];
+        if (req.file) {
+            const url = await subirImagenACloudinary(req.file.buffer);
+            imagenes.push(url);
         }
 
         const nuevoPost = new Post({
-            // creamos el documento pero todavia no lo guardamos en mongo
             usuario_id: req.user._id,
-            grupo_id: req.body.grupo_id,
+            grupo_id,
             contenido,
             imagenes,
-            fecha: new Date(),
+            fecha: new Date()
         });
 
-        const doc = await nuevoPost.save(); // guardamos el documento en mongo
-        console.log('Post creado: ' + doc._id);
+        const doc = await nuevoPost.save();
 
         res.status(HttpStatus.CREATED).json({
-            message: 'Post creado exitosamente',
+            message: "Post creado exitosamente",
             post: {
                 _id: doc._id,
                 usuario_id: doc.usuario_id,
                 grupo_id: doc.grupo_id,
                 contenido: doc.contenido,
                 imagenes: doc.imagenes,
-                fecha: doc.fecha,
-            },
+                fecha: doc.fecha
+            }
         });
+
     } catch (err) {
         console.log(err);
-        res.status(HttpStatus.SERVER_ERROR).json({
-            message: 'Error del servidor',
-        });
+        if ((err as Error).name === 'CastError') {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Id Invalido' });
+        }
+        res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
     }
 }
 
-export async function listarPosts(req: Request, res: Response) {
+
+export async function listarPosts(req: AuthRequest, res: Response) {
     try {
         const pagina = Number(req.query.pagina) || 1;
         const limite = Number(req.query.limite) || 10;
@@ -70,25 +75,38 @@ export async function listarPosts(req: Request, res: Response) {
         const filtro: FiltroPost = req.query.incluirInactivos === 'true' ? {} : { activo: true };
 
         if (req.query.grupo_id) {
+            if (typeof req.user === 'string' || !req.user) {
+                return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'Debes iniciar sesión para ver los posts de un grupo' });
+            }
+
+            const miId = req.user._id.toString();
+            const esAdmin = req.user.rol === 'administrador';
+
+            const grupo = await Grupo.findById(req.query.grupo_id);
+            if (!grupo || !grupo.activo) {
+                return res.status(HttpStatus.NOT_FOUND).json({ message: 'Grupo no encontrado' });
+            }
+
+            const esIntegrante = grupo.integrantes?.some((i) => i.toString() === miId) ?? false;
+
+            if (!esIntegrante && !esAdmin) {
+                return res.status(HttpStatus.FORBIDDEN).json({ message: 'Debes ser integrante del grupo para ver sus posts' });
+            }
+
             filtro.grupo_id = req.query.grupo_id as string;
         }
 
         const posts = await Post.find(filtro).skip(skip).limit(limite);
         const total = await Post.countDocuments(filtro);
 
-        res.json({
-            data: posts,
-            pagina,
-            totalPaginas: Math.ceil(total / limite),
-            total,
-        });
+        res.json({ data: posts, pagina, totalPaginas: Math.ceil(total / limite), total });
     } catch (err) {
         console.log(err);
-        res.status(HttpStatus.SERVER_ERROR).json({
-            message: 'Error del servidor',
-        });
+        res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
     }
 }
+
+
 
 export async function obtenerPost(req: Request, res: Response) {
     try {

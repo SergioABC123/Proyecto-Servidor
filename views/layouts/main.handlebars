@@ -13,9 +13,18 @@
         <div class="container d-flex justify-content-between align-items-center">
             <h1 class="m-0 h4"><a href="/" class="text-white text-decoration-none">Play N Seek</a></h1>
             <nav>
+                {{#if (esModeradorOAdmin usuario.rol)}}
+                    <a href="/moderacion/reportes" class="text-white me-3">Reportes</a>
+                {{/if}}
                 <a href="/juegos" class="text-white me-3">Juegos</a>
                 <a href="/grupos" class="text-white me-3">Grupos</a>
                 {{#if estaLogueado}}
+                    <a href="/match" class="text-white me-3">Match</a>
+                    <a href="/grupos" class="text-white me-3">Grupos</a>
+                    <a href="/perfil" class="text-white me-3">Mi perfil</a>
+                    {{#if (eq usuario.rol "administrador")}}
+                        <a href="/admin/usuarios" class="text-white me-3">Admin</a>
+                    {{/if}}
                     <span class="text-white me-3">Hola, {{usuario.nombre}}</span>
                     <a href="/logout" class="btn btn-outline-light btn-sm">Cerrar sesión</a>
                 {{else}}
@@ -28,7 +37,43 @@
     <main class="container mt-4">
         {{{body}}}
     </main>
+</main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    {{#if estaLogueado}}
+    <div class="modal fade" id="modalReportar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reportar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="mensaje-reportar"></div>
+                    <form id="form-reportar">
+                        <input type="hidden" id="reportar-reportado-id">
+                        <input type="hidden" id="reportar-grupo-id">
+                        <div class="mb-3">
+                            <label class="form-label">Motivo</label>
+                            <select id="reportar-motivo" class="form-select" required>
+                                <option value="spam">Spam</option>
+                                <option value="acoso">Acoso</option>
+                                <option value="contenido_inapropiado">Contenido inapropiado</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción (opcional)</label>
+                            <textarea id="reportar-descripcion" class="form-control" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100">Enviar reporte</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/reportar.js" data-token="{{token}}"></script>
+    {{/if}}
 </body>
 </html>

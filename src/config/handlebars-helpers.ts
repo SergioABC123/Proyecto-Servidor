@@ -21,5 +21,13 @@ export const handlebarsHelpers = {
     
     marcadoSiIgual: function (valor: string, otro: string | undefined) {
         return valor === otro ? 'checked' : '';
-    }
+    },
+
+    eq: function (a: unknown, b: unknown) {
+    return String(a) === String(b);
+    },
+    
+    esModeradorOAdmin: function (rol: string) {
+    return rol === 'administrador' || rol === 'moderador';
+    },
 };

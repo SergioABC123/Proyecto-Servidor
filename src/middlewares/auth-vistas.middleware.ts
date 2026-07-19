@@ -74,6 +74,7 @@ export async function inyectarUsuarioEnVistas(req: AuthRequest, res: Response, n
     // undefined si no hay token (evitar errores en el layout)
     res.locals.estaLogueado = false;
     res.locals.usuario = null;
+    res.locals.token = req.cookies.token || null;
 
     if (!token) {
         return next(); // sin token, seguimos con los defaults de arriba
@@ -98,4 +99,20 @@ export async function inyectarUsuarioEnVistas(req: AuthRequest, res: Response, n
 
     next(); // siempre se continua lo que significa que este
     //  middleware nunca bloquea ni redirige
+}
+
+
+export function requireAdminVistas(req: AuthRequest, res: Response, next: NextFunction) {
+    if (typeof req.user === 'string' || !req.user || req.user.rol !== 'administrador') {
+        return res.redirect('/');
+    }
+    next();
+}
+
+export function requireModeradorVistas(req: AuthRequest, res: Response, next: NextFunction) {
+    if (typeof req.user === 'string' || !req.user ||
+        (req.user.rol !== 'administrador' && req.user.rol !== 'moderador')) {
+        return res.redirect('/');
+    }
+    next();
 }

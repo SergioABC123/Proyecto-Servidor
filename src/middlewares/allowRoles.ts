@@ -15,3 +15,13 @@ export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction
     }
     next();
 }
+
+export function requireModerador(req: AuthRequest, res: Response, next: NextFunction) {
+    if (typeof req.user === 'string' || !req.user) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+    }
+    if (req.user.rol !== 'administrador' && req.user.rol !== 'moderador') {
+        return res.status(HttpStatus.FORBIDDEN).json({ message: 'No tienes permisos suficientes' });
+    }
+    next();
+}

@@ -4,6 +4,7 @@ import { HttpStatus } from "../types/https-status";
 import { Solicitud } from "../database/mongo/models/solicitud.model";
 import { EstadoSolicitud } from "../types/solicitud.types";
 import { obtenerRecomendacionesDgraph } from "../database/dgraph/queries/recomendacion.queries";
+import { User } from '../database/mongo/models/user.model';
 
 export async function obtenerRecomendaciones(req: AuthRequest, res: Response) {
     try {
@@ -34,10 +35,24 @@ export async function obtenerRecomendaciones(req: AuthRequest, res: Response) {
             )
         );
 
-        const recomendaciones = candidatosDgraph
+        const candidatosFiltrados = candidatosDgraph
             .filter(c => !idsExcluir.has(c.mongo_id))
             .slice(0, limite);
 
+        // enriquecemos con datos reales de mongo (dgraph solo nos dio mongo_id y nombre)
+        const idsFinales = candidatosFiltrados.map(c => c.mongo_id);
+        const perfiles = await User.find({ _id: { $in: idsFinales } })
+            .select('nombre foto_perfil idiomas plataformas modo_juego')
+            .lean();
+
+        const perfilesPorId = new Map(perfiles.map(p => [p._id.toString(), p]));
+
+        const recomendaciones = candidatosFiltrados
+            .filter(c => perfilesPorId.has(c.mongo_id))
+            .map(c => ({
+                mongo_id: c.mongo_id,
+                ...perfilesPorId.get(c.mongo_id)
+            }));
         return res.json({ data: recomendaciones });
 
     } catch (err) {

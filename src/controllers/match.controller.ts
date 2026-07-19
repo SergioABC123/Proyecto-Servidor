@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../types/auth-request";
 import { HttpStatus } from "../types/https-status";
 import { obtenerMatchesDeUsuario } from "../database/dgraph/queries/match.queries";
+import { User } from '../database/mongo/models/user.model';
 
 export async function listarMisMatches(req: AuthRequest, res: Response) {
     try {
@@ -12,7 +13,24 @@ export async function listarMisMatches(req: AuthRequest, res: Response) {
         const mongoId = req.user._id.toString();
         const matches = await obtenerMatchesDeUsuario(mongoId);
 
-        return res.json({ data: matches });
+        // dgraph solo nos da mongo_id y nombre del compañero, traemos foto_perfil desde mongo
+        const idsCompaneros = matches.map(m => m.companero.mongo_id);
+        const perfiles = await User.find({ _id: { $in: idsCompaneros } })
+            .select('foto_perfil')
+            .lean();
+
+        const fotosPorId = new Map(perfiles.map(p => [p._id.toString(), p.foto_perfil]));
+
+        const matchesEnriquecidos = matches.map(m => ({
+            fecha: m.fecha,
+            companero: {
+                mongo_id: m.companero.mongo_id,
+                nombre: m.companero.nombre,
+                foto_perfil: fotosPorId.get(m.companero.mongo_id)
+            }
+        }));
+
+        return res.json({ data: matchesEnriquecidos });
 
     } catch (err) {
         console.log(err);

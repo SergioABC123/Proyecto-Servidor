@@ -82,7 +82,7 @@ export async function listarSolicitudesRecibidas(req: AuthRequest, res: Response
         const solicitudes = await Solicitud.find({
             a_usuario: req.user._id,
             estado: EstadoSolicitud.PENDIENTE
-        }).populate('de_usuario', 'nombre foto_perfil');
+        }).populate('de_usuario', 'nombre foto_perfil idiomas plataformas');
 
         return res.json({ data: solicitudes });
     } catch (err) {

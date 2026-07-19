@@ -1,0 +1,38 @@
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h2 class="mb-4">Administrar usuarios</h2>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Rol actual</th>
+                    <th>Cambiar rol</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each usuarios}}
+                    <tr>
+                        <td>{{this.nombre}}</td>
+                        <td>{{this.correo}}</td>
+                        <td><span class="badge bg-secondary">{{this.rol}}</span></td>
+                        <td>
+                            {{#unless (eq this._id ../miUsuarioId)}}
+                                <select class="form-select form-select-sm select-rol" data-id="{{this._id}}" style="width: auto; display: inline-block;">
+                                    <option value="usuario" {{#if (eq this.rol "usuario")}}selected{{/if}}>Usuario</option>
+                                    <option value="moderador" {{#if (eq this.rol "moderador")}}selected{{/if}}>Moderador</option>
+                                    <option value="administrador" {{#if (eq this.rol "administrador")}}selected{{/if}}>Administrador</option>
+                                </select>
+                            {{else}}
+                                <span class="text-muted small">(tú)</span>
+                            {{/unless}}
+                        </td>
+                    </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="/js/adminUsuarios.js" data-token="{{token}}"></script>

@@ -1,10 +1,12 @@
 import { Types } from 'mongoose';
 
+// mensaje.types.ts
 export interface IMensaje {
-    grupo_id: Types.ObjectId;
     usuario_id: Types.ObjectId;
     contenido: string;
     fecha: Date;
+    grupo_id?: Types.ObjectId;      // presente si es mensaje de grupo
+    destinatario_id?: Types.ObjectId; // presente si es mensaje privado
 }
 //Omit<IMensaje, 'usuario_id'> significa que estamos tomando la interfaz IMensaje y omitiendo la propiedad usuario_id
 //  util para este caso ya que   queremos crear una nueva interfaz que sea simila
