@@ -70,12 +70,13 @@ export interface IUser {
     edad?: number;
     sexo?: Sexo;
     correo: string;
+    correo_confirmado?: boolean;
     contrasena_hash: string;
     rol?: Roles;
     isActive?: boolean;
     foto_perfil?: string;
     zona_horaria?: string;
-    horario_juego?: string;
+    horario_juego?: string[];
     disponibilidad?: string[];
     idiomas?: Idioma[];
     modo_juego?: ModoDeJuego[];

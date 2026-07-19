@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { crearPost, eliminarPost, actualizarPost, obtenerPost, listarPosts } from '../controllers/post.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { upload } from '../middlewares/upload.middleware';
 
 const router = Router();
 
@@ -15,16 +16,16 @@ const router = Router();
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required: [grupo_id, contenido]
  *             properties:
  *               grupo_id: { type: string }
  *               contenido: { type: string }
- *               imagenes:
- *                 type: array
- *                 items: { type: string }
+ *               imagen:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       201:
  *         description: Post creado exitosamente.
@@ -32,7 +33,9 @@ const router = Router();
  *         description: Falta grupo_id o contenido.
  *   get:
  *     tags: [Posts]
- *     summary: Listar posts
+ *     summary: Listar posts (requiere ser integrante del grupo si se filtra por grupo_id)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: pagina
@@ -46,13 +49,19 @@ const router = Router();
  *       - in: query
  *         name: grupo_id
  *         schema: { type: string }
- *         description: Filtrar posts de un grupo específico.
+ *         description: Filtrar posts de un grupo específico. Requiere ser integrante del grupo (o admin).
  *     responses:
  *       200:
  *         description: Lista paginada de posts.
+ *       401:
+ *         description: Debes iniciar sesión para ver los posts de un grupo.
+ *       403:
+ *         description: Debes ser integrante del grupo para ver sus posts.
+ *       404:
+ *         description: Grupo no encontrado.
  */
-router.post('/', authMiddleware, crearPost);
-router.get('/', listarPosts);
+router.post('/', authMiddleware, upload.single('imagen'), crearPost);
+router.get('/', authMiddleware, listarPosts);
 
 /**
  * @swagger

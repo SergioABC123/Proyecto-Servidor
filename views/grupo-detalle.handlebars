@@ -1,0 +1,101 @@
+{{#if error}}
+    <div class="alert alert-danger">{{error}}</div>
+    <a href="/grupos" class="btn btn-secondary">Volver a grupos</a>
+{{else}}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-3">
+                <div class="card-body p-4">
+                    <h2 class="card-title">{{grupo.nombre}}</h2>
+                    <p class="text-muted">{{grupo.descripcion}}</p>
+                    <p><strong>Integrantes:</strong> {{grupo.integrantes.length}}</p>
+
+                    {{#if estaLogueado}}
+                        {{#unless esIntegrante}}
+                            <button id="btn-unirse" class="btn btn-primary">Unirme al grupo</button>
+                        {{/unless}}
+                    {{/if}}
+
+                    <a href="/grupos" class="btn btn-outline-secondary mt-2">← Volver a grupos</a>
+                </div>
+            </div>
+
+            {{#if esIntegrante}}
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-posts">Posts</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-chat">Chat</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-integrantes">Integrantes</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tab-posts">
+                        <form id="form-nuevo-post" class="mb-3">
+                            <textarea id="input-contenido-post" class="form-control mb-2" placeholder="Escribe algo para el grupo..." rows="2"></textarea>
+                            <input type="file" id="input-imagen-post" class="form-control mb-2" accept="image/*">
+                            <button type="submit" class="btn btn-primary btn-sm">Publicar</button>
+                        </form>
+                        <div id="lista-posts"></div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-chat">
+                        <div id="mensajes" class="border rounded p-3 mb-3" style="height: 300px; overflow-y: auto;"></div>
+                        <form id="form-mensaje" class="d-flex gap-2">
+                            <input type="text" id="input-mensaje" class="form-control" placeholder="Escribe un mensaje...">
+                            <button type="submit" class="btn btn-primary">Enviar</button>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-integrantes">
+                        {{#unless esLider}}
+                            <button id="btn-salir" class="btn btn-outline-danger btn-sm mb-3">Salir del grupo</button>
+                        {{/unless}}
+
+                        <ul class="list-group">
+                            {{#each grupo.integrantes}}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {{#if this.foto_perfil}}
+                                            <img src="{{this.foto_perfil}}" class="rounded-circle me-2" width="28" height="28" style="object-fit: cover;">
+                                        {{else}}
+                                            <i class="bi bi-person-circle me-2"></i>
+                                        {{/if}}
+                                        {{this.nombre}}
+                                        {{#if (eq this._id ../grupo.lider_id)}}
+                                            <span class="badge bg-warning text-dark ms-1">Líder</span>
+                                        {{/if}}
+                                    </div>
+                                    <div>
+                                        {{#if ../esLider}}
+                                            {{#unless (eq this._id ../grupo.lider_id)}}
+                                                <button class="btn btn-sm btn-outline-secondary btn-transferir" data-id="{{this._id}}">Hacer líder</button>
+                                                <button class="btn btn-sm btn-outline-danger btn-expulsar" data-id="{{this._id}}">Expulsar</button>
+                                            {{/unless}}
+                                        {{/if}}
+                                        {{#unless (eq this._id ../miUsuarioId)}}
+                                            <button class="btn btn-sm btn-outline-danger btn-reportar" data-id="{{this._id}}">Reportar</button>
+                                        {{/unless}}
+                                    </div>
+                                </li>
+                            {{/each}}
+                        </ul>
+                    </div>
+                </div>
+
+                <script src="/socket.io/socket.io.js"></script>
+                <script src="/js/chat.js" data-grupo-id="{{grupoId}}" data-token="{{token}}" data-mi-usuario-id="{{miUsuarioId}}"></script>
+                <script src="/js/grupoPosts.js" data-grupo-id="{{grupoId}}" data-token="{{token}}"></script>
+                <script src="/js/grupoGestion.js" data-grupo-id="{{grupoId}}" data-token="{{token}}"></script>
+            {{else}}
+                <div class="alert alert-info">Únete al grupo para ver sus publicaciones y el chat.</div>
+            {{/if}}
+        </div>
+    </div>
+
+    <script src="/js/grupoAcciones.js" data-token="{{token}}" data-grupo-id="{{grupoId}}"></script>
+{{/if}}

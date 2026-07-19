@@ -1,0 +1,17 @@
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center py-5">
+        <h2 class="display-5 fw-bold">Encuentra a tu próximo squad</h2>
+        <p class="lead text-muted">
+            Play N Seek te conecta con jugadores compatibles por juego,
+            horario, plataforma e idioma. Deja de jugar solo.
+        </p>
+        <div class="mt-4">
+            {{#if estaLogueado}}
+                <a href="/perfil" class="btn btn-primary btn-lg px-4">Ir a mi perfil</a>
+            {{else}}
+                <a href="/login" class="btn btn-primary btn-lg me-2 px-4">Iniciar sesión</a>
+                <a href="/register" class="btn btn-outline-primary btn-lg px-4">Registrarse</a>
+            {{/if}}
+        </div>
+    </div>
+</div>

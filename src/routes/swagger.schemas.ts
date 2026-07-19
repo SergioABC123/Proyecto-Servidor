@@ -22,6 +22,9 @@
  *         correo:
  *           type: string
  *           format: email
+ *         correo_confirmado:
+ *           type: boolean
+ *           default: false
  *         rol:
  *           type: string
  *           enum: [administrador, usuario, moderador]
@@ -183,4 +186,23 @@
  *           type: string
  *         comentario_id:
  *           type: string
+ *     Solicitud:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         de_usuario:
+ *           type: string
+ *         a_usuario:
+ *           type: string
+ *         estado:
+ *           type: string
+ *           enum: [pendiente, aceptada, rechazada]
+ *           default: pendiente
+ *         fecha_creacion:
+ *           type: string
+ *           format: date-time
+ *         fecha_respuesta:
+ *           type: string
+ *           format: date-time
  */

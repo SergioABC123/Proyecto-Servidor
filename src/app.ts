@@ -1,15 +1,32 @@
 import express from 'express';
+import { engine } from 'express-handlebars';
+import { handlebarsHelpers } from './config/handlebars-helpers';
 import routes from './routes';
 import path from 'path';
+import cookieParser from 'cookie-parser';
+import { inyectarUsuarioEnVistas } from './middlewares/auth-vistas.middleware';
 
-let app;
+let app: express.Express;
 
 export function createApp() {
     app = express();
-    app.use(express.json());
 
-    app.use(express.urlencoded({ extended: true })); // lo usamos para leer el formulario con el formato urlencoded
-    app.use(express.static(path.join(__dirname, '..', 'public'))); // carcar los estilos css
+    app.use(express.json());
+    app.use(cookieParser());
+    app.use(inyectarUsuarioEnVistas); // middleware global para inyectar usuario en vistas
+
+    app.use(express.urlencoded({ extended: true }));
+    app.use(express.static(path.join(__dirname, '..', 'public')));
+
+    // Configuración de Handlebars
+    app.engine(
+        'handlebars',
+        engine({
+            helpers: handlebarsHelpers,
+        }),
+    );
+    app.set('view engine', 'handlebars');
+    app.set('views', path.join(__dirname, '..', 'views'));
 
     app.use(routes);
 

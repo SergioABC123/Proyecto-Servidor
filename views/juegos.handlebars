@@ -1,0 +1,66 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="m-0">Catálogo de juegos</h2>
+    {{#if (eq usuario.rol "administrador")}}
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportarJuego">+ Importar juego</button>
+    {{/if}}
+</div>
+
+{{#if error}}
+    <div class="alert alert-danger">{{error}}</div>
+{{/if}}
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {{#each juegos}}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <a href="/juegos/{{this._id}}" class="text-decoration-none text-dark">
+                    {{#if this.imagen}}
+                        <img src="{{this.imagen}}" class="card-img-top" alt="{{this.titulo}}">
+                    {{/if}}
+                    <div class="card-body">
+                        <h5 class="card-title">{{this.titulo}}</h5>
+                        <p class="card-text mb-2">
+                            {{#each this.generos}}
+                                <span class="badge bg-{{colorGenero @index}} me-1">{{this}}</span>
+                            {{/each}}
+                        </p>
+                        <p class="card-text">
+                            {{#each this.plataformas}}
+                                <span class="badge bg-{{colorPlataforma this}} me-1">{{this}}</span>
+                            {{/each}}
+                        </p>
+                    </div>
+                </a>
+                {{#if (eq ../usuario.rol "administrador")}}
+                    <div class="card-footer">
+                        <button class="btn btn-sm btn-outline-danger w-100 btn-eliminar-juego" data-id="{{this._id}}">Eliminar</button>
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    {{else}}
+        <p class="text-muted">No hay juegos en el catálogo todavía.</p>
+    {{/each}}
+</div>
+
+{{#if (eq usuario.rol "administrador")}}
+<div class="modal fade" id="modalImportarJuego" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Importar juego desde RAWG</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" id="input-buscar-juego" class="form-control" placeholder="Nombre del juego...">
+                    <button id="btn-buscar-juego" class="btn btn-outline-primary">Buscar</button>
+                </div>
+                <div id="resultados-busqueda-juego"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<script src="/js/juegosAdmin.js" data-token="{{token}}"></script>

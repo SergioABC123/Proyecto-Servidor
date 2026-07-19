@@ -69,7 +69,7 @@ export async function listarComentarios(req: Request, res: Response) {
             filtro.post_id = req.query.post_id as string;
         }
 
-        const comentarios = await Comentario.find(filtro).skip(skip).limit(limite);
+        const comentarios = await Comentario.find(filtro).populate('usuario_id', 'nombre').skip(skip).limit(limite);
         const total = await Comentario.countDocuments(filtro);
 
         res.json({

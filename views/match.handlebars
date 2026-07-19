@@ -1,0 +1,31 @@
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2 class="mb-4">Match</h2>
+
+        <ul class="nav nav-tabs mb-4" id="tabsMatch">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-recomendaciones">Recomendaciones</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-solicitudes">Solicitudes recibidas</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-matches">Mis matches</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-recomendaciones">
+                <div id="contenedor-recomendaciones" class="row row-cols-1 row-cols-md-2 g-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tab-solicitudes">
+                <div id="contenedor-solicitudes"></div>
+            </div>
+            <div class="tab-pane fade" id="tab-matches">
+                <div id="contenedor-matches" class="row row-cols-1 row-cols-md-2 g-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/match.js" data-token="{{token}}"></script>

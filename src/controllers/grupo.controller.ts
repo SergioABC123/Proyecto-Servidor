@@ -3,6 +3,10 @@ import { AuthRequest } from '../types/auth-request';
 import { HttpStatus } from '../types/https-status';
 import { Grupo } from '../database/mongo/models/grupo.model';
 import { IGrupo } from '../types/grupo.types';
+import { Roles } from "../types/user.types"; 
+import { Types } from 'mongoose';
+import { crearComunidadEnDgraph, agregarMiembroComunidad, quitarMiembroComunidad } from '../database/dgraph/queries/comunidad.queries';
+
 
 export async function crearGrupo(req: AuthRequest, res: Response) {
     try {
@@ -29,6 +33,13 @@ export async function crearGrupo(req: AuthRequest, res: Response) {
 
         const doc = await nuevoGrupo.save(); // guardamos el documento en mongo
         console.log('Grupo creado: ' + doc._id);
+
+        try {
+            await crearComunidadEnDgraph(doc._id.toString(), doc.nombre, doc.fecha_creacion.toISOString());
+            await agregarMiembroComunidad(req.user._id.toString(), doc._id.toString());
+        } catch (err) {
+            console.error(`Grupo ${doc._id} creado en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
+        }
 
         res.status(HttpStatus.CREATED).json({
             message: 'Grupo creado exitosamente',
@@ -174,5 +185,212 @@ export async function eliminarGrupo(req: AuthRequest, res: Response) {
             return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Id Invalido' });
         }
         return res.status(HttpStatus.SERVER_ERROR).json({ message: 'Error del servidor' });
+    }
+}
+
+export async function unirseAGrupo(req: AuthRequest, res: Response) {
+    try {
+        if (typeof req.user === 'string' || !req.user) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+        }
+
+        const { id } = req.params;
+        const usuarioId = req.user._id.toString();
+        const grupo = await Grupo.findById(id);
+
+        if (!grupo || !grupo.activo) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'No se encontro el grupo' });
+        }
+
+        const yaEsMiembro = grupo.integrantes?.some(
+            (integranteId) => integranteId.toString() === usuarioId
+        );
+
+        if (yaEsMiembro) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Ya eres miembro de este grupo' });
+        }
+
+        grupo.integrantes = [...(grupo.integrantes || []), req.user._id];
+        await grupo.save();
+
+        try {
+            await agregarMiembroComunidad(req.user._id.toString(), id as string);
+        } catch (err) {
+            console.error(`Usuario unido al grupo en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
+        }
+
+        return res.json({ message: 'Te uniste al grupo exitosamente', grupo });
+
+    } catch (err) {
+        console.log(err);
+        if ((err as Error).name === 'CastError') {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Id Invalido' });
+        }
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
+    }
+}
+
+export async function salirDeGrupo(req: AuthRequest, res: Response) {
+    try {
+        if (typeof req.user === 'string' || !req.user) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+        }
+
+        const { id } = req.params;
+        const usuarioId = req.user._id.toString(); 
+
+        const grupo = await Grupo.findById(id);
+
+        if (!grupo || !grupo.activo) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'No se encontro el grupo' });
+        }
+
+        if (grupo.lider_id.toString() === usuarioId) {
+            return res.status(HttpStatus.BAD_REQUEST).json({
+                message: 'El lider debe transferir el liderazgo antes de salir del grupo'
+            });
+        }
+
+        const esMiembro = grupo.integrantes?.some(
+            (integranteId) => integranteId.toString() === usuarioId 
+        );
+
+        if (!esMiembro) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'No eres miembro de este grupo' });
+        }
+
+        grupo.integrantes = grupo.integrantes?.filter(
+            (integranteId) => integranteId.toString() !== usuarioId
+        );
+        await grupo.save();
+
+        try {
+            await quitarMiembroComunidad(usuarioId, id as string);
+        } catch (err) {
+            console.error(`Usuario salió del grupo en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
+        }
+
+        return res.json({ message: 'Saliste del grupo exitosamente' });
+
+    } catch (err) {
+        console.log(err);
+        if ((err as Error).name === 'CastError') {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Id Invalido' });
+        }
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
+    }
+}
+
+export async function expulsarIntegrante(req: AuthRequest, res: Response) {
+    try {
+        if (typeof req.user === 'string' || !req.user) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+        }
+
+        const { id } = req.params;
+        const { usuarioId } = req.body;
+
+        if (!usuarioId) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'usuarioId es requerido' });
+        }
+
+        const grupo = await Grupo.findById(id);
+
+        if (!grupo || !grupo.activo) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'No se encontro el grupo' });
+        }
+
+        const esLider = grupo.lider_id.toString() === req.user._id.toString();
+        const esAdmin = req.user.rol === Roles.ADMIN;
+
+        if (!esLider && !esAdmin) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({
+                message: 'Solo el lider del grupo o un administrador pueden expulsar integrantes'
+            });
+        }
+
+        if (usuarioId === grupo.lider_id.toString()) {
+            return res.status(HttpStatus.BAD_REQUEST).json({
+                message: 'No se puede expulsar al lider del grupo'
+            });
+        }
+
+        const esMiembro = grupo.integrantes?.some(
+            (integranteId) => integranteId.toString() === usuarioId
+        );
+
+        if (!esMiembro) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'Ese usuario no es miembro de este grupo' });
+        }
+
+        grupo.integrantes = grupo.integrantes?.filter(
+            (integranteId) => integranteId.toString() !== usuarioId
+        );
+        await grupo.save();
+
+        try {
+            await quitarMiembroComunidad(usuarioId, id as string);
+        } catch (err) {
+            console.error(`Integrante expulsado en Mongo pero FALLÓ la sincronización con Dgraph:`, err);
+        }
+
+        return res.json({ message: 'Integrante expulsado exitosamente' });
+
+    } catch (err) {
+        console.log(err);
+        if ((err as Error).name === 'CastError') {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Id Invalido' });
+        }
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
+    }
+}
+
+export async function transferirLiderazgo(req: AuthRequest, res: Response) {
+    try {
+        if (typeof req.user === 'string' || !req.user) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+        }
+
+        const { id } = req.params; // id del grupo
+        const { nuevoLiderId } = req.body;
+        const usuarioId = req.user._id.toString();
+
+        if (!nuevoLiderId) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'nuevoLiderId es requerido' });
+        }
+
+        const grupo = await Grupo.findById(id);
+
+        if (!grupo || !grupo.activo) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'No se encontro el grupo' });
+        }
+
+        if (grupo.lider_id.toString() !== usuarioId) {
+            return res.status(HttpStatus.FORBIDDEN).json({ message: 'Solo el lider actual puede transferir el liderazgo' });
+        }
+
+        if (nuevoLiderId === usuarioId) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Ya eres el lider de este grupo' });
+        }
+
+        const esMiembro = grupo.integrantes?.some(
+            (integranteId) => integranteId.toString() === nuevoLiderId
+        );
+
+        if (!esMiembro) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'El nuevo lider debe ser miembro del grupo' });
+        }
+
+        grupo.lider_id = new Types.ObjectId(nuevoLiderId);
+        await grupo.save();
+
+        return res.json({ message: 'Liderazgo transferido exitosamente', grupo });
+
+    } catch (err) {
+        console.log(err);
+        if ((err as Error).name === 'CastError') {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Id Invalido' });
+        }
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
     }
 }

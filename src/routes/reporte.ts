@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { crearReporte, listarReportes, obtenerReporte, actualizarReporte } from '../controllers/reporte.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { requireModerador } from '../middlewares/allowRoles';
 
 const router = Router();
 
@@ -35,7 +36,7 @@ const router = Router();
  *         description: Falta reportado_id/motivo, o intentaste reportarte a ti mismo.
  *   get:
  *     tags: [Reportes]
- *     summary: Listar reportes
+ *     summary: Listar reportes (solo admin o moderador)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -53,16 +54,18 @@ const router = Router();
  *     responses:
  *       200:
  *         description: Lista paginada de reportes.
+ *       403:
+ *         description: No tienes permisos de moderador o administrador.
  */
 router.post('/', authMiddleware, crearReporte);
-router.get('/', authMiddleware, listarReportes);
+router.get('/', authMiddleware, requireModerador, listarReportes);
 
 /**
  * @swagger
  * /reporte/{id}:
  *   get:
  *     tags: [Reportes]
- *     summary: Obtener un reporte por ID
+ *     summary: Obtener un reporte por ID (solo admin o moderador)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -73,11 +76,13 @@ router.get('/', authMiddleware, listarReportes);
  *     responses:
  *       200:
  *         description: Datos del reporte.
+ *       403:
+ *         description: No tienes permisos de moderador o administrador.
  *       404:
  *         description: Reporte no encontrado.
  *   patch:
  *     tags: [Reportes]
- *     summary: Cambiar el estado de un reporte (pensado para moderador)
+ *     summary: Cambiar el estado de un reporte (solo admin o moderador)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -101,11 +106,10 @@ router.get('/', authMiddleware, listarReportes);
  *         description: Reporte actualizado.
  *       400:
  *         description: Falta el campo estado.
+ *       403:
+ *         description: No tienes permisos de moderador o administrador.
  */
-router.get('/:id', authMiddleware, obtenerReporte);
-router.patch('/:id', authMiddleware, actualizarReporte);
-//Por el momento se puede modificar el reporte solo el cmapo del estado,
-//Ya que en teoria un moderador puede cambiar el estado de un reporte, pero no puede cambiar el contenido del mismo.
-//Falta el middleware para que solo un moderador pueda cambiar el estado del reporte, pero por el momento lo dejamos asi para poder probar la funcionalidad de actualizar un reporte.
+router.get('/:id', authMiddleware, requireModerador, obtenerReporte);
+router.patch('/:id', authMiddleware, requireModerador, actualizarReporte);
 
 export default router;

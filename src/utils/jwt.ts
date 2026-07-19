@@ -35,3 +35,17 @@ export function verifyToken(token: string) {
         throw new Error('Error al verificar el token', { cause: err });
     }
 }
+
+export function generarTokenConfirmacion(id: string) {
+    return jwt.sign({ id }, process.env.JWT_SECRET!, { expiresIn: '24h' });
+}
+
+export function verificarTokenConfirmacion(token: string): { id: string } {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+
+    if (typeof decoded === 'string' || !('id' in decoded)) {
+        throw new Error('Token de confirmación inválido');
+    }
+
+    return { id: decoded.id as string };
+}

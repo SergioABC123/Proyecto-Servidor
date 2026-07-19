@@ -1,0 +1,69 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="m-0">Grupos</h2>
+    <div class="d-flex gap-2">
+        {{#if estaLogueado}}
+            <div class="btn-group">
+                <a href="/grupos" class="btn btn-outline-primary {{#unless soloMios}}active{{/unless}}">Todos</a>
+                <a href="/grupos?misGrupos=true" class="btn btn-outline-primary {{#if soloMios}}active{{/if}}">Mis grupos</a>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearGrupo">+ Crear grupo</button>
+        {{/if}}
+    </div>
+</div>
+
+{{#if error}}
+    <div class="alert alert-danger">{{error}}</div>
+{{/if}}
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {{#each grupos}}
+        <div class="col">
+            <a href="/grupos/{{this._id}}" class="text-decoration-none text-dark">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{this.nombre}}</h5>
+                        <p class="card-text text-muted">{{this.descripcion}}</p>
+                        <p class="card-text">
+                            <small class="text-muted">{{this.integrantes.length}} integrantes</small>
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    {{else}}
+        {{#if soloMios}}
+            <p class="text-muted">No perteneces a ningún grupo todavía.</p>
+        {{else}}
+            <p class="text-muted">No hay grupos todavía.</p>
+        {{/if}}
+    {{/each}}
+</div>
+
+{{#if estaLogueado}}
+<div class="modal fade" id="modalCrearGrupo" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crear grupo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="mensaje-crear-grupo"></div>
+                <form id="form-crear-grupo">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Crear</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/grupos.js" data-token="{{token}}"></script>
+{{/if}}
