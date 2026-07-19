@@ -1,3 +1,5 @@
+/* global bootstrap */
+
 const scriptReportar = document.currentScript;
 const tokenReportar = scriptReportar.dataset.token;
 

@@ -3,6 +3,7 @@ import { AuthRequest } from "../types/auth-request";
 import { HttpStatus } from "../types/https-status";
 import { obtenerMatchesDeUsuario } from "../database/dgraph/queries/match.queries";
 import { User } from '../database/mongo/models/user.model';
+import { eliminarMatchEntreUsuarios } from '../database/dgraph/queries/match.queries';
 
 export async function listarMisMatches(req: AuthRequest, res: Response) {
     try {
@@ -35,5 +36,28 @@ export async function listarMisMatches(req: AuthRequest, res: Response) {
     } catch (err) {
         console.log(err);
         return res.status(HttpStatus.SERVER_ERROR).json({ message: "Error del servidor" });
+    }
+}
+
+export async function eliminarMatch(req: AuthRequest, res: Response) {
+    try {
+        if (typeof req.user === 'string' || !req.user) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No autenticado' });
+        }
+
+        const miId = req.user._id.toString();
+        const { id: companeroId } = req.params;
+
+        if (typeof companeroId !== 'string') {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Id de usuario inválido' });
+        }
+
+        await eliminarMatchEntreUsuarios(miId, companeroId);
+
+        return res.json({ message: 'Match eliminado' });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: 'Error del servidor' });
     }
 }

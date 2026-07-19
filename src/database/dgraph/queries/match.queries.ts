@@ -144,3 +144,79 @@ export async function obtenerMatchesDeUsuario(mongoId: string): Promise<MatchCon
     await txn.discard();
   }
 }
+
+// Busca el uid del nodo Match que conecta a dos usuarios específicos
+async function buscarUidMatchEntreUsuarios(
+  mongoIdA: string,
+  mongoIdB: string
+): Promise<string | null> {
+  const txn = dgraphClient.newTxn();
+
+  try {
+    const query = `
+      query buscarMatch($mongoIdA: string, $mongoIdB: string) {
+        usuario(func: eq(mongo_id, $mongoIdA)) {
+          usuario_conecta {
+            uid
+            companero: ~usuario_conecta @filter(eq(mongo_id, $mongoIdB)) {
+              mongo_id
+            }
+          }
+        }
+      }
+    `;
+
+    const res = await txn.queryWithVars(query, {
+      $mongoIdA: mongoIdA,
+      $mongoIdB: mongoIdB,
+    });
+    const data = res.getJson();
+
+    if (!data.usuario || data.usuario.length === 0) {
+      return null;
+    }
+
+    const conexiones = data.usuario[0].usuario_conecta || [];
+    const matchEncontrado = conexiones.find(
+      (c: { uid: string; companero?: unknown[] }) => c.companero && c.companero.length > 0
+    );
+
+    return matchEncontrado ? matchEncontrado.uid : null;
+  } finally {
+    await txn.discard();
+  }
+}
+
+// Elimina el match (y sus conexiones) entre dos usuarios
+export async function eliminarMatchEntreUsuarios(
+  mongoIdA: string,
+  mongoIdB: string
+): Promise<void> {
+  const matchUid = await buscarUidMatchEntreUsuarios(mongoIdA, mongoIdB);
+
+  if (!matchUid) {
+    throw new Error('No se encontró un match entre estos usuarios');
+  }
+
+  const usuarioAUid = await buscarUidUsuarioPorMongoId(mongoIdA);
+  const usuarioBUid = await buscarUidUsuarioPorMongoId(mongoIdB);
+
+  const txn = dgraphClient.newTxn();
+  try {
+    const mu = new dgraph.Mutation();
+
+    // Elimina las aristas usuario_conecta de ambos usuarios hacia el nodo Match
+    mu.setDeleteJson([
+      { uid: usuarioAUid, usuario_conecta: [{ uid: matchUid }] },
+      { uid: usuarioBUid, usuario_conecta: [{ uid: matchUid }] },
+      // Elimina el nodo Match por completo (S * *)
+      { uid: matchUid },
+    ]);
+    mu.setCommitNow(true);
+
+    await txn.mutate(mu);
+    console.log(`Match ${matchUid} eliminado entre ${mongoIdA} y ${mongoIdB}`);
+  } finally {
+    await txn.discard();
+  }
+}

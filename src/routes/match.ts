@@ -1,21 +1,30 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middlewares/auth.middleware';
-import { listarMisMatches } from '../controllers/match.controller';
+import { listarMisMatches, eliminarMatch } from '../controllers/match.controller';
 
 const router = Router();
 
+router.get('/mis-matches', authMiddleware, listarMisMatches);
+
 /**
  * @swagger
- * /match/mis-matches:
- *   get:
+ * /match/{id}:
+ *   delete:
  *     tags: [Matches]
- *     summary: Listar mis matches confirmados
+ *     summary: Eliminar un match (dejar de ser amigos)
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: mongo_id del compañero con el que se quiere terminar el match
  *     responses:
  *       200:
- *         description: Lista de matches, con los datos del compañero de cada uno.
+ *         description: Match eliminado correctamente
+ *       500:
+ *         description: No se encontró el match o error del servidor
  */
-router.get('/mis-matches', authMiddleware, listarMisMatches);
+router.delete('/:id', authMiddleware, eliminarMatch);
 
 export default router;
