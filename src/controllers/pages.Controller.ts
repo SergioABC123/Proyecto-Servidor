@@ -6,6 +6,7 @@ import { Grupo } from '../database/mongo/models/grupo.model';
 import { Idioma, ModoDeJuego, Plataforma } from '../types/user.types';
 import { confirmarCuentaCore } from '../services/confirmacion.service';
 import { NextFunction } from 'express';
+import { Types } from 'mongoose';
 
 export function mostrarIndex(req: Request, res: Response) {
     res.render('index'); // res.locals.estaLogueado ya está disponible en la vista sin pasarlo aquí
@@ -142,11 +143,17 @@ export async function mostrarGrupos(req: AuthRequest, res: Response) {
 
 
 
+interface IntegrantePoblado {
+    _id: Types.ObjectId;
+    nombre: string;
+    foto_perfil: string;
+}
+
 export async function mostrarDetalleGrupo(req: AuthRequest, res: Response) {
     try {
         const { id } = req.params;
         const grupo = await Grupo.findById(id)
-            .populate('integrantes', 'nombre foto_perfil')
+            .populate<{ integrantes: IntegrantePoblado[] }>('integrantes', 'nombre foto_perfil')
             .lean();
 
         if (!grupo || !grupo.activo) {
@@ -160,7 +167,9 @@ export async function mostrarDetalleGrupo(req: AuthRequest, res: Response) {
         if (typeof req.user === 'object' && req.user !== null) {
             miUsuarioId = req.user._id.toString();
             const esAdmin = req.user.rol === 'administrador';
-            const perteneceAlGrupo = (grupo.integrantes || []).some((i: any) => i._id.toString() === miUsuarioId);
+            const perteneceAlGrupo = (grupo.integrantes || []).some(
+                (i) => i._id.toString() === miUsuarioId
+            );
             esIntegrante = perteneceAlGrupo || esAdmin;
             esLider = grupo.lider_id.toString() === miUsuarioId;
         }
@@ -180,7 +189,6 @@ export async function mostrarDetalleGrupo(req: AuthRequest, res: Response) {
         res.render('grupo-detalle', { error: 'No se encontro el grupo' });
     }
 }
-
 
 
 export async function mostrarConfirmacion(req: Request, res: Response) {
