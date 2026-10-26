@@ -135,12 +135,26 @@ export async function listarGrupos(req: Request, res: Response) {
         const limite = Number(req.query.limite) || 10; // datos del cliente, por defecto 10
         const skip = (pagina - 1) * limite; // datos del cliente, por defecto 0
 
-        const filtro = req.query.incluirInactivos === 'true' ? {} : { activo: true };
-        // preguntamos si quiere que mostremos los inactivos o no
-        // filtro= {} significa que no se filtre nada, si se la al else el filtro seria que este activo el grupo
+        // El filtro se arma por partes. Se tipa con lo que puede llevar para que TypeScript
+        // avise si se escribe un campo que no existe.
+        const filtro: { activo?: boolean; nombre?: { $regex: string; $options: string } } = {};
+
+        // si no piden los inactivos, solo mostramos los activos
+        if (req.query.incluirInactivos !== 'true') {
+            filtro.activo = true;
+        }
+
+        // búsqueda por nombre: ?q=valorant
+        const busqueda = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+        if (busqueda !== '') {
+            // se escapan los caracteres especiales para que el texto se busque tal cual
+            // y nadie pueda mandar una expresión regular maliciosa
+            const textoSeguro = busqueda.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            filtro.nombre = { $regex: textoSeguro, $options: 'i' }; // 'i' ignora mayúsculas
+        }
 
         const grupos = await Grupo.find(filtro).skip(skip).limit(limite); // aplicamos lo que nos pidio el usuario
-        const total = await Grupo.countDocuments(filtro); // contamos los documentos
+        const total = await Grupo.countDocuments(filtro); // contamos los documentos que cumplen el mismo filtro
 
         res.json({
             data: grupos,
