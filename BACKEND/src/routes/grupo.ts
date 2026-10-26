@@ -52,10 +52,16 @@ const router = Router();
  *       - in: query
  *         name: incluirInactivos
  *         schema: { type: boolean, default: false }
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: Busca grupos cuyo nombre contenga este texto (sin distinguir mayúsculas)
  *     responses:
  *       200:
  *         description: Lista paginada de grupos.
  */
+router.post('/', authMiddleware, crearGrupo);
+router.get('/', listarGrupos);
 router.post('/', authMiddleware, crearGrupo);
 router.get('/', listarGrupos);
 
