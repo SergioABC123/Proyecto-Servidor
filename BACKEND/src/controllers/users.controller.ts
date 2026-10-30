@@ -187,18 +187,32 @@ export async function loginUser(req: Request, res: Response) {
     }
 }
 
-export function getMe(req: AuthRequest, res: Response) {
+export async function getMe(req: AuthRequest, res: Response) {
     const usuario = obtenerUsuarioAutenticado(req, res);
     if (!usuario) return;
 
-    res.json({
-        message: 'Usuario autenticado',
-        user: {
-            id: usuario._id,
-            correo: usuario.correo,
-            rol: usuario.rol,
-        },
-    });
+    try {
+        // el token solo trae id, correo y rol: el nombre hay que leerlo de la base
+        const datos = await User.findById(usuario._id);
+
+        if (!datos) {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'Usuario no encontrado' });
+        }
+
+        return res.json({
+            message: 'Usuario autenticado',
+            user: {
+                id: usuario._id,
+                correo: usuario.correo,
+                rol: usuario.rol,
+                nombre: datos.nombre,
+                foto_perfil: datos.foto_perfil,
+            },
+        });
+    } catch (err) {
+        console.log(err);
+        return res.status(HttpStatus.SERVER_ERROR).json({ message: 'Server error' });
+    }
 }
 
 export async function actualizarUsuario(req: AuthRequest, res: Response) {
